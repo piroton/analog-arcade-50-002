@@ -8,6 +8,7 @@ Part of the 50.002 Computational Structures course, Fall 2018.
 GA | JD | EK | SY
 
 ## The Game
+Nim, but played as a normal game.
 
 ### Game Introduction
 
