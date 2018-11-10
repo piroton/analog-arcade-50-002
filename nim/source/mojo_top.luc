@@ -1,0 +1,446 @@
+module mojo_top (
+    input clk,              // 50MHz clock
+    input rst_n,            // reset button (active low)
+    input cclk,             // configuration clock, AVR ready when high
+    output spi_miso,        // AVR SPI MISO
+    input spi_ss,           // AVR SPI Slave Select
+    input spi_mosi,         // AVR SPI MOSI
+    input spi_sck,          // AVR SPI Clock
+    output spi_channel [4], // AVR general purpose pins (used by default to select ADC channel)
+    input avr_tx,           // AVR TX (FPGA RX)
+    output avr_rx,          // AVR RX (FPGA TX)
+    input avr_rx_busy,      // AVR RX buffer full
+    input button,
+    input io_button[5],
+    output io_sel[4],       // Digit select on IO Shield
+    output io_seg[8],       // 7-segment LEDs on IO Shield
+    output io_led[3][8]
+  ) {
+  
+  sig rst;                  // reset signal
+  
+  .clk(clk) {
+    // The reset conditioner is used to synchronize the reset signal to the FPGA
+    // clock. This ensures the entire FPGA comes out of reset at the same time.
+    reset_conditioner reset_cond;
+    
+    edge_detector detectleft(#RISE(0), #FALL(1)); // detect rising edges
+    edge_detector detectright(#RISE(0), #FALL(1));
+    edge_detector detectupremove1(#RISE(0), #FALL(1));
+    edge_detector detectdownremove2(#RISE(0), #FALL(1));
+    edge_detector detectreset(#RISE(0), #FALL(1));
+ 
+    button_conditioner buttonleft; // condition buttons
+    button_conditioner buttonright;
+    button_conditioner buttonupremove1;
+    button_conditioner buttondownremove2;
+    button_conditioner buttonreset;
+    
+    .rst(rst){
+      
+      dff leftstack[8](#INIT(8b11111111)); // set left stack to 8
+      dff middlestack[8](#INIT(8b11111111)); // set middle stack to 8
+      dff rightstack[8](#INIT(8b11111111)); // set right stack to 8
+            
+      dff turn_blink[4][4](#INIT({4d0,4d0,4d0,4d0})); // blink to indicate player turn
+      dff location_blink[8](#INIT(8b0)); // blink to indicate player location_blink
+      
+      multi_seven_seg seg;
+      dff playerscores[4][4](#INIT({4d0,4d0,4d0,4d0}));
+    }
+  }
+  
+  fsm states(.clk(clk), .rst(rst)) = {START, P1L, P1M, P1R, P1C, P2L, P2M, P2R, P2C};
+  
+  
+  always {
+    reset_cond.in = ~rst_n; // input raw inverted reset signal
+    rst = reset_cond.out;   // conditioned reset
+    
+    io_led = 3x{{8h0}};
+    io_seg = 8hff;          // turn segments off
+    io_sel = 4hf;           // select no digits
+    
+    spi_miso = bz;          // not using SPI
+    spi_channel = bzzzz;    // not using flags
+    avr_rx = bz;            // not using serial port
+    
+    io_led[2] = leftstack.q;  // left stack LEDs
+    io_led[1] = middlestack.q;  // middle stack LEDs
+    io_led[0] = rightstack.q;  // right stack LEDs
+    
+    io_seg = ~seg.seg; // connect segments to the driver
+    io_sel = ~seg.sel; // connect digits to the driver
+    seg.values = playerscores.q; // initialise player scores
+    
+    buttonleft.in = io_button[3];
+    detectleft.in = buttonleft.out;
+    buttonright.in = io_button[4];
+    detectright.in = buttonright.out;
+    buttonupremove1.in = io_button[0];
+    detectupremove1.in = buttonupremove1.out;
+    buttondownremove2.in = io_button[2];
+    detectdownremove2.in = buttondownremove2.out;
+    buttonreset.in = io_button[1];
+    detectreset.in = buttonreset.out;
+    
+    case(states.q){
+      
+      states.START:
+        io_led[2] = leftstack.q; // no blinking to indicate location
+        io_led[1] = middlestack.q; // no blinking to indicate location
+        io_led[0] = rightstack.q; // no blinking to indicate location
+        seg.values = playerscores.q; // no blinking to indicate player turn
+        leftstack.d = 8b11111111;
+        middlestack.d = 8b11111111;
+        rightstack.d = 8b11111111;
+        states.d = states.P1M;
+        
+      states.P1M:
+        seg.values = turn_blink.q;
+        
+        if (turn_blink.q == playerscores.q){
+          turn_blink.d[1:0] = playerscores.q[1:0];
+          turn_blink.d[3:2] = {4b0,4b0};
+        }else{
+          turn_blink.d = playerscores.q;
+        }
+        
+        io_led[2] = leftstack.q; // no blinking to indicate location
+        io_led[1] = location_blink.q; // BLINKING to indicate location
+        io_led[0] = rightstack.q; // no blinking to indicate location        
+        
+        if (detectreset.out == 1){
+          states.d = states.START;
+        }
+        
+        if (location_blink.q == middlestack.q){
+          location_blink.d = 8b0;
+        }else{
+          location_blink.d = middlestack.q;
+        }
+        
+        if(detectleft.out == 1){
+          if (leftstack.q >= 8b1){
+            states.d = states.P1L;
+          }else{
+            states.d = states.P1M;
+          }
+        }else if(detectright.out == 1){
+          if (rightstack.q >= 8b1){
+            states.d = states.P1R;
+          }else{
+            states.d = states.P1M;
+          }
+        }else if (detectdownremove2.out == 1){
+          if (middlestack.q >= 8b10){
+            middlestack.d = middlestack.q >> 2;
+            states.d = states.P1C;
+          }else{
+            states.d = states.P1M;
+          }
+        }else if (detectupremove1.out == 1){
+          if (middlestack.q >= 8b1){
+            middlestack.d = middlestack.q >> 1;
+            states.d = states.P1C;
+          }else{
+            states.d = states.P1M;
+          }
+        }
+        
+      states.P1L:
+        seg.values = turn_blink.q;
+        
+        if (turn_blink.q == playerscores.q){
+          turn_blink.d[1:0] = playerscores.q[1:0];
+          turn_blink.d[3:2] = {4b0,4b0};
+        }else{
+          turn_blink.d = playerscores.q;
+        }
+        
+        io_led[2] = location_blink.q; // BLINKING to indicate location
+        io_led[1] = middlestack.q; // no blinking to indicate location
+        io_led[0] = rightstack.q; // no blinking to indicate location    
+        
+        if (detectreset.out == 1){
+          states.d = states.START;
+        }
+        
+        if (location_blink.q == leftstack.q){
+          location_blink.d = 8b0;
+        }else{
+          location_blink.d = leftstack.q;
+        } 
+        
+        if(detectleft.out == 1){
+          states.d = states.P1L;
+        }else if(detectright.out == 1){
+          if (middlestack.q >= 8b1){
+            states.d = states.P1M;
+          }else if (rightstack.q >= 8b1){
+            states.d = states.P1R;
+          }else{
+            states.d = states.P1L;
+          }
+        }else if (detectdownremove2.out == 1){
+          if (leftstack.q >= 8b10){
+            leftstack.d = leftstack.q >> 2;
+            states.d = states.P1C;
+          }else{
+            states.d = states.P1L;
+          }
+        }else if (detectupremove1.out == 1){
+          if (leftstack.q >= 8b1){
+            leftstack.d = leftstack.q >> 1;
+            states.d = states.P1C;
+          }else{
+            states.d = states.P1L;
+          }
+        }
+        
+      states.P1R:
+        seg.values = turn_blink.q;
+        
+        if (turn_blink.q == playerscores.q){
+          turn_blink.d[1:0] = playerscores.q[1:0];
+          turn_blink.d[3:2] = {4b0,4b0};
+        }else{
+          turn_blink.d = playerscores.q;
+        }
+        
+        io_led[2] = leftstack.q; // no blinking to indicate location
+        io_led[1] = middlestack.q; // no blinking to indicate location
+        io_led[0] = location_blink.q; // BLINKING to indicate location 
+        
+        if (detectreset.out == 1){
+          states.d = states.START;
+        }
+        
+        if (location_blink.q == rightstack.q){
+          location_blink.d = 8b0;
+        }else{
+          location_blink.d = rightstack.q;
+        }   
+        
+        if(detectleft.out == 1){
+          if (middlestack.q >= 8b1){
+            states.d = states.P1M;
+          }else if (leftstack.q >= 8b1){
+            states.d = states.P1L;
+          }else{
+            states.d = states.P1R;
+          }
+        }else if(detectright.out == 1){
+          states.d = states.P1R;
+        }else if (detectdownremove2.out == 1){
+          if (rightstack.q >= 8b10){
+            rightstack.d = rightstack.q >> 2;
+            states.d = states.P1C;
+          }else{
+            states.d = states.P1R;
+          }
+        }else if (detectupremove1.out == 1){
+          if (rightstack.q >= 8b1){
+            rightstack.d = rightstack.q >> 1;
+            states.d = states.P1C;
+          }else{
+            states.d = states.P1R;
+          }
+        }
+        
+      states.P2M:
+        seg.values = turn_blink.q;
+        
+        if (turn_blink.q == playerscores.q){
+          turn_blink.d[3:2] = playerscores.q[3:2];
+          turn_blink.d[1:0] = {4b0,4b0};
+        }else{
+          turn_blink.d = playerscores.q;
+        }
+        
+        io_led[2] = leftstack.q; // no blinking to indicate location
+        io_led[1] = location_blink.q; // BLINKING to indicate location
+        io_led[0] = rightstack.q; // no blinking to indicate location 
+        
+        if (detectreset.out == 1){
+          states.d = states.START;
+        }
+        
+        if (location_blink.q == middlestack.q){
+          location_blink.d = 8b0;
+        }else{
+          location_blink.d = middlestack.q;
+        }   
+        
+        if(detectleft.out == 1){
+          if (leftstack.q >= 8b1){
+            states.d = states.P2L;
+          }else{
+            states.d = states.P2M;
+          }
+        }else if(detectright.out == 1){
+          if (rightstack.q >= 8b1){
+            states.d = states.P2R;
+          }else{
+            states.d = states.P2M;
+          }
+        }else if (detectdownremove2.out == 1){
+          if (middlestack.q >= 8b10){
+            middlestack.d = middlestack.q >> 2;
+            states.d = states.P2C;
+          }else{
+            states.d = states.P2M;
+          }
+        }else if (detectupremove1.out == 1){
+          if (middlestack.q >= 8b1){
+            middlestack.d = middlestack.q >> 1;
+            states.d = states.P2C;
+          }else{
+            states.d = states.P2M;
+          }
+        }
+        
+      states.P2L:
+        seg.values = turn_blink.q;
+        
+        if (turn_blink.q == playerscores.q){
+          turn_blink.d[3:2] = playerscores.q[3:2];
+          turn_blink.d[1:0] = {4b0,4b0};
+        }else{
+          turn_blink.d = playerscores.q;
+        }
+        
+        io_led[2] = location_blink.q; // BLINKING to indicate location
+        io_led[1] = middlestack.q; // no blinking to indicate location
+        io_led[0] = rightstack.q; // no blinking to indicate location  
+        
+        if (detectreset.out == 1){
+          states.d = states.START;
+        }
+        
+        if (location_blink.q == leftstack.q){
+          location_blink.d = 8b0;
+        }else{
+          location_blink.d = leftstack.q;
+        }  
+        
+        if(detectleft.out == 1){
+          states.d = states.P2L;
+        }else if(detectright.out == 1){
+          if (middlestack.q >= 8b1){
+            states.d = states.P2M;
+          }else if (rightstack.q >= 8b1){
+            states.d = states.P2R;
+          }else{
+            states.d = states.P2L;
+          }
+        }else if (detectdownremove2.out == 1){
+          if (leftstack.q >= 8b10){
+            leftstack.d = leftstack.q >> 2;
+            states.d = states.P2C;
+          }else{
+            states.d = states.P2L;
+          }
+        }else if (detectupremove1.out == 1){
+          if (leftstack.q >= 8b1){
+            leftstack.d = leftstack.q >> 1;
+            states.d = states.P2C;
+          }else{
+            states.d = states.P2L;
+          }
+        }
+        
+      states.P2R:
+        seg.values = turn_blink.q;
+        
+        if (turn_blink.q == playerscores.q){
+          turn_blink.d[3:2] = playerscores.q[3:2];
+          turn_blink.d[1:0] = {4b0,4b0};
+        }else{
+          turn_blink.d = playerscores.q;
+        }
+        
+        io_led[2] = leftstack.q; // no blinking to indicate location
+        io_led[1] = middlestack.q; // no blinking to indicate location
+        io_led[0] = location_blink.q; // BLINKING to indicate location 
+        
+        if (detectreset.out == 1){
+          states.d = states.START;
+        }
+        
+        if (location_blink.q == rightstack.q){
+          location_blink.d = 8b0;
+        }else{
+          location_blink.d = rightstack.q;
+        }   
+        
+        if(detectleft.out == 1){
+          if (middlestack.q >= 8b1){
+            states.d = states.P2M;
+          }else if (leftstack.q >= 8b1){
+            states.d = states.P2L;
+          }else{
+            states.d = states.P2R;
+          }
+        }else if(detectright.out == 1){
+          states.d = states.P2R;
+        }else if (detectdownremove2.out == 1){
+          if (rightstack.q >= 8b10){
+            rightstack.d = rightstack.q >> 2;
+            states.d = states.P2C;
+          }else{
+            states.d = states.P2R;
+          }
+        }else if (detectupremove1.out == 1){
+          if (rightstack.q >= 8b1){
+            rightstack.d = rightstack.q >> 1;
+            states.d = states.P2C;
+          }else{
+            states.d = states.P2R;
+          }
+        }
+        
+      states.P1C:
+        if (leftstack.q == 8b0 && middlestack.q == 8b0 && rightstack.q == 8b0){
+          if (playerscores.q[2] == 4d9){
+            playerscores.d[2] = 4d0;
+            playerscores.d[3] = playerscores.q[3] + 4d1;
+          }else{
+            playerscores.d[2] = playerscores.q[2] + 4d1;
+          }
+          states.d = states.START;
+        }else{
+          if (middlestack.q >= 8b1){
+            states.d = states.P2M;
+          }else if (leftstack.q >= 8b1){
+            states.d = states.P2L;
+          }else{
+            states.d = states.P2R;
+          }
+        }
+          
+      states.P2C:
+        if (leftstack.q == 8b0 && middlestack.q == 8b0 && rightstack.q == 8b0){
+          if (playerscores.q[0] == 4d9){
+            playerscores.d[0] = 0;
+            playerscores.d[1] = playerscores.q[1] + 4d1;
+          }else{
+            playerscores.d[0] = playerscores.q[0] + 4d1;
+          }
+          states.d = states.START;
+        }else{
+          if (middlestack.q >= 8b1){
+            states.d = states.P1M;
+          }else if (leftstack.q >= 8b1){
+            states.d = states.P1L;
+          }else{
+            states.d = states.P1R;
+          }
+        }
+        
+      default:
+        states.d = states.P1M;
+          
+  }
+  }
+}
