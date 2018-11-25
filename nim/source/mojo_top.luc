@@ -11,7 +11,9 @@ module mojo_top (
     output avr_rx,          // AVR RX (FPGA TX)
     input avr_rx_busy,      // AVR RX buffer full
     input button,
-    input io_button[2][5],  // I/O buttons
+    input io_reset,
+    input io_startgame,
+    input io_button[2][4],  // I/O buttons
     output io_sel[4],       // Digit select on IO Shield
     output io_seg[8],       // 7-segment LEDs on IO Shield
     output led[3][10],
@@ -56,12 +58,14 @@ module mojo_top (
     edge_detector detectupremove1(#RISE(0), #FALL(1));
     edge_detector detectdownremove2(#RISE(0), #FALL(1));
     edge_detector detectreset(#RISE(0), #FALL(1));
+    edge_detector detectstart(#RISE(0), #FALL(1));
  
     button_conditioner buttonleft; // condition buttons
     button_conditioner buttonright;
     button_conditioner buttonupremove1;
     button_conditioner buttondownremove2;
     button_conditioner buttonreset;
+    button_conditioner buttonstartgame;
     
     .rst(rst){
       
@@ -108,7 +112,8 @@ module mojo_top (
     detectupremove1.in = buttonupremove1.out;
     buttondownremove2.in = io_button[2];
     detectdownremove2.in = buttondownremove2.out;
-    buttonreset.in = io_button[1];
+
+    buttonreset.in = io_reset;
     detectreset.in = buttonreset.out;
     
     case(states.q){
