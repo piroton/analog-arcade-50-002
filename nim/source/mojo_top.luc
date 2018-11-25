@@ -27,7 +27,12 @@ module mojo_top (
   ) {
   
   sig rst;                  // reset signal
-  alu alu16;  // Assign ALU signal
+
+  // Checker signals; use ALU and check against one value
+  sig check1; 
+  sig check2;
+  // Assign ALU and stack randomizers
+  alu alu16; 
   lfsr_rand randl;
   lfsr_rand randm;
   lfsr_rand randr;
@@ -112,22 +117,36 @@ module mojo_top (
     detectupremove1.in = buttonupremove1.out;
     buttondownremove2.in = io_button[2];
     detectdownremove2.in = buttondownremove2.out;
-
+    buttonstartgame.in = io_startgame;
+    detectstart.in = buttonstartgame.out;
     buttonreset.in = io_reset;
     detectreset.in = buttonreset.out;
     
+    // Init randomness meter
+
+
     case(states.q){
       states.START:
-        led[2] = leftstack.q; // no blinking to indicate location
-        led[1] = middlestack.q; // no blinking to indicate location
-        led[0] = rightstack.q; // no blinking to indicate location
+        led[2] = randl.out; // no blinking to indicate location
+        led[1] = randm.out; // no blinking to indicate location
+        led[0] = randr.out; // no blinking to indicate location
+        randl.enable = 1;
+        randm.enable = 1;
+        randr.enable = 1;
         seg.values = playerscores.q; // no blinking to indicate player turn
         leftstack.d = 8b11111111;
         middlestack.d = 8b11111111;
         rightstack.d = 8b11111111;
-        states.d = states.P1M;
+        if (detectstart.out == 1){
+          states.d = states.P1M;
+        } else {
+          states.d = states.START;
+        }
         
       states.P1M:
+        randl.enable = 0;
+        randm.enable = 0;
+        randr.enable = 0;
         seg.values = turn_blink.q;
         
         if (turn_blink.q == playerscores.q){
