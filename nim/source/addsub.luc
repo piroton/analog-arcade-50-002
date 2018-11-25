@@ -1,0 +1,40 @@
+module adder (
+    // initialise opcode inputs, a and b 
+    input opcode[6],
+    input a[16],
+    input b[16],
+    // outputs z v n ; 16-bit sum
+    output zero,
+    output ver,
+    output neg,
+    output outsum[16],
+    output overflow
+  ) {
+  
+  sig actualsum[17];
+  sig negative[16];
+  
+  always {
+    negative = a-b;
+    case(opcode[1:0]){
+      // opcode value controls operation conducted
+      b00: // add
+        actualsum = a+b;
+      b01: // sub
+        actualsum = a-b;
+      b10: // mult
+        actualsum = a*b;
+      b11: // modulo
+        actualsum = a-((a/b)*b);
+      default:
+        actualsum = a+b;
+      }
+    
+    // map outputs
+    outsum = actualsum[15:0];
+    ver = (a[15] & ~b[15] & (~negative[15])) | ((~a[15])&(b[15])&negative[15]);
+    zero = ~|negative;
+    neg = actualsum[16];
+    overflow = (a[15] & b[15] & (~actualsum[15])) | ((~a[15])&(~b[15])&actualsum[15]);
+  }
+}

@@ -1,0 +1,31 @@
+module bool (
+    // initialise opcode inputs, a and b
+    input opcode[6],
+    input a[16],
+    input b[16],
+    // output 16-bit boolean
+    output actualbool[16]
+  ) {
+
+  always {
+    case(opcode[3:0]){
+      // opcode value controls operation conducted
+      b1000: // AND
+        actualbool = a & b;
+      b1110: // OR
+        actualbool = a | b;
+      b0110: // XOR
+        actualbool = a ^ b;
+      b1010: // "A"
+        actualbool = a;
+      b1111: // NOR
+        actualbool = ~(a | b);
+      b1001: // NAND
+        actualbool = ~(a & b);
+      b0111: // XNOR
+        actualbool = ~(a ^ b);
+      default:
+        actualbool = a;
+  }
+}
+}

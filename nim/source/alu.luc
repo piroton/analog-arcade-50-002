@@ -1,0 +1,77 @@
+module alu (
+    input a[16],  // first input
+    input b[16],  // second input
+    input opcode[6],  // alufn 6 bits input
+    
+    output out[16],  // 16 bit output
+    output z,
+    output v,
+    output n,
+    output overflow,
+    output getA[16],
+    output getB[16],
+    output getOpcode[6]
+  ) {
+
+  // instantiate all components
+  bool bool;
+  adder addr;
+  comparator comp;
+  bitshift bits;
+  
+  
+  always {
+    
+    getA = a;
+    getB = b;
+    getOpcode = opcode;
+    
+    // linking a and b from inputs into a and b of submodules
+    bool.a = a;
+    bool.b = b;
+    bool.opcode = opcode;
+    
+    addr.a = a;
+    addr.b = b;
+    addr.opcode = opcode;
+    
+    comp.z = addr.zero;
+    comp.v = addr.ver;
+    comp.n = addr.neg;
+    comp.opcode = opcode;
+    
+    bits.a = a;
+    bits.b = b;
+    bits.opcode = opcode;
+    
+    overflow = addr.overflow;
+    
+    case(opcode[5:4]){
+      2b00:  // adder circuit
+        out = addr.outsum;
+        z = addr.zero;
+        v = addr.ver;
+        n = addr.neg;
+      2b01:  // boolean circuit
+        out = bool.actualbool;
+        z = 0;
+        v = 0;
+        n = 0;
+      2b10:  // bitwise operator circuit
+        out = bits.z;
+        z = 0;
+        v = 0;
+        n = 0;
+      2b11:  // comparator circuit
+        out = comp.comparator;
+        z = 0;
+        v = 0;
+        n = 0;
+      default:
+        out = 0;
+        z = 0;
+        v = 0;
+        n = 0;
+    }
+  }
+}

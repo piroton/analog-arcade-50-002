@@ -14,10 +14,37 @@ module mojo_top (
     input io_button[5],
     output io_sel[4],       // Digit select on IO Shield
     output io_seg[8],       // 7-segment LEDs on IO Shield
-    output io_led[3][8]
+    output io_led[3][8],
+    // Necessary ALU inputs / outputs
+    output getA[16],    // A
+    output getB[16],    // B
+    output out[16],     // ALU output
+    input a[16],        // first input
+    input b[16],        // second input
+    input alufn[6]    // alufn 6 bits input
   ) {
   
   sig rst;                  // reset signal
+  alu alu16;  // Assign ALU signal
+  lfsr_rand randl;
+  lfsr_rand randm;
+  lfsr_rand randr;
+  
+  /*
+  OPCODES FOR ALU:
+     ADD:   6b000000
+     SUB:   6b000001
+     AND:   6b011000
+     OR:    6b011110
+     XOR:   6b010110
+     "A":   6b011010
+     SHL:   6b100000
+     SHR:   6b100001
+     SRA:   6b100011
+     CMPEQ: 6b110011
+     CMPLT: 6b110101
+     CMPLE: 6b110111
+  */
   
   .clk(clk) {
     // The reset conditioner is used to synchronize the reset signal to the FPGA
@@ -73,6 +100,7 @@ module mojo_top (
     io_sel = ~seg.sel; // connect digits to the driver
     seg.values = playerscores.q; // initialise player scores
     
+    // Button Initializing
     buttonleft.in = io_button[3];
     detectleft.in = buttonleft.out;
     buttonright.in = io_button[4];
@@ -85,7 +113,6 @@ module mojo_top (
     detectreset.in = buttonreset.out;
     
     case(states.q){
-      
       states.START:
         io_led[2] = leftstack.q; // no blinking to indicate location
         io_led[1] = middlestack.q; // no blinking to indicate location

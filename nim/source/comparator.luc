@@ -1,0 +1,25 @@
+module comparator (
+    // input: opcode[6], z, n, v
+    // output: out
+    input opcode[6],  // alufn signal, determine comparison modes
+    input z,  // from adder
+    input n,  // from adder
+    input v,  // from adder
+    output comparator  // output of comparator
+  ) {
+
+  always {
+    case(opcode[2:1]){
+      2b00:  // unused input of opcode[2:1], output 0
+        comparator = 0;
+      2b01:  // if looking for equals comparison, output z
+        comparator = z;
+      2b10:  // if looking for less than comparison, output n xor v
+        comparator = n^v;
+      2b11:  // if looking for less than or equals comparison, output z or (n xor v)
+        comparator = z|(n^v);
+      default:  // otherwise, default output 0
+        comparator = 0;
+    }
+  }
+}
