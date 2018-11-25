@@ -1,6 +1,7 @@
 module lfsr_rand (
     input clk,  // clock
     input rst,  // reset
+    input enable, // output enable
     // Init output for lfsr_rand
     output out[10]
   ) {
@@ -14,20 +15,39 @@ module lfsr_rand (
     }
   }
   always {
-    mid43 = curr_num.q[3] ^ curr_num.q[2];
-    mid32 = mid43 ^ curr_num.q[1];
-    newnum = curr_num.q + mid32;
-    if (newnum < 4){
-    out = 10b1111111111;
-      } else if (newnum < 7){
-    out = 10b0111111111;
-      } else if (newnum < 10){
-    out = 10b0011111111;
-      } else if (newnum < 13){
-    out = 10b0001111111;
-    } else{
-    out = 10b0000111111;
+    case(enable){
+      b0:
+        mid43 = curr_num.q[3] ^ curr_num.q[2];
+        mid32 = mid43 ^ curr_num.q[1];
+        newnum = curr_num.q >> 1 + mid32;
+        if (newnum < 4){
+        out = 10b1111111111;
+        } else if (newnum < 7){
+          out = 10b0111111111;
+        } else if (newnum < 10){
+          out = 10b0011111111;
+        } else if (newnum < 13){
+          out = 10b0001111111;
+        } else{
+          out = 10b0000111111;
+        }
+        curr_num.d = newnum;
+      b1:
+        mid43 = 0;
+        mid32 = 0;
+        newnum = curr_num.q;
+        if (newnum < 4){
+        out = 10b1111111111;
+        } else if (newnum < 7){
+          out = 10b0111111111;
+        } else if (newnum < 10){
+          out = 10b0011111111;
+        } else if (newnum < 13){
+          out = 10b0001111111;
+        } else{
+          out = 10b0000111111;
+        }
+        curr_num.d = newnum;
     }
-    curr_num.d = newnum;
   }
 }

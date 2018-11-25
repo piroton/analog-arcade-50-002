@@ -11,10 +11,10 @@ module mojo_top (
     output avr_rx,          // AVR RX (FPGA TX)
     input avr_rx_busy,      // AVR RX buffer full
     input button,
-    input io_button[5],
+    input io_button[2][5],  // I/O buttons
     output io_sel[4],       // Digit select on IO Shield
     output io_seg[8],       // 7-segment LEDs on IO Shield
-    output io_led[3][8],
+    output led[3][10],
     // Necessary ALU inputs / outputs
     output getA[16],    // A
     output getB[16],    // B
@@ -65,9 +65,9 @@ module mojo_top (
     
     .rst(rst){
       
-      dff leftstack[8](#INIT(8b11111111)); // set left stack to 8
-      dff middlestack[8](#INIT(8b11111111)); // set middle stack to 8
-      dff rightstack[8](#INIT(8b11111111)); // set right stack to 8
+      dff leftstack[10](#INIT(10b1111111111)); // set left stack to 8
+      dff middlestack[10](#INIT(10b1111111111)); // set middle stack to 8
+      dff rightstack[10](#INIT(10b1111111111)); // set right stack to 8
             
       dff turn_blink[4][4](#INIT({4d0,4d0,4d0,4d0})); // blink to indicate player turn
       dff location_blink[8](#INIT(8b0)); // blink to indicate player location_blink
@@ -76,7 +76,6 @@ module mojo_top (
       dff playerscores[4][4](#INIT({4d0,4d0,4d0,4d0}));
     }
   }
-  
   fsm states(.clk(clk), .rst(rst)) = {START, P1L, P1M, P1R, P1C, P2L, P2M, P2R, P2C};
   
   
@@ -84,7 +83,7 @@ module mojo_top (
     reset_cond.in = ~rst_n; // input raw inverted reset signal
     rst = reset_cond.out;   // conditioned reset
     
-    io_led = 3x{{8h0}};
+    led = 3x{{8h0}};
     io_seg = 8hff;          // turn segments off
     io_sel = 4hf;           // select no digits
     
@@ -92,9 +91,9 @@ module mojo_top (
     spi_channel = bzzzz;    // not using flags
     avr_rx = bz;            // not using serial port
     
-    io_led[2] = leftstack.q;  // left stack LEDs
-    io_led[1] = middlestack.q;  // middle stack LEDs
-    io_led[0] = rightstack.q;  // right stack LEDs
+    led[2] = leftstack.q;  // left stack LEDs
+    led[1] = middlestack.q;  // middle stack LEDs
+    led[0] = rightstack.q;  // right stack LEDs
     
     io_seg = ~seg.seg; // connect segments to the driver
     io_sel = ~seg.sel; // connect digits to the driver
@@ -114,9 +113,9 @@ module mojo_top (
     
     case(states.q){
       states.START:
-        io_led[2] = leftstack.q; // no blinking to indicate location
-        io_led[1] = middlestack.q; // no blinking to indicate location
-        io_led[0] = rightstack.q; // no blinking to indicate location
+        led[2] = leftstack.q; // no blinking to indicate location
+        led[1] = middlestack.q; // no blinking to indicate location
+        led[0] = rightstack.q; // no blinking to indicate location
         seg.values = playerscores.q; // no blinking to indicate player turn
         leftstack.d = 8b11111111;
         middlestack.d = 8b11111111;
@@ -133,9 +132,9 @@ module mojo_top (
           turn_blink.d = playerscores.q;
         }
         
-        io_led[2] = leftstack.q; // no blinking to indicate location
-        io_led[1] = location_blink.q; // BLINKING to indicate location
-        io_led[0] = rightstack.q; // no blinking to indicate location        
+        led[2] = leftstack.q; // no blinking to indicate location
+        led[1] = location_blink.q; // BLINKING to indicate location
+        led[0] = rightstack.q; // no blinking to indicate location        
         
         if (detectreset.out == 1){
           states.d = states.START;
@@ -185,9 +184,9 @@ module mojo_top (
           turn_blink.d = playerscores.q;
         }
         
-        io_led[2] = location_blink.q; // BLINKING to indicate location
-        io_led[1] = middlestack.q; // no blinking to indicate location
-        io_led[0] = rightstack.q; // no blinking to indicate location    
+        led[2] = location_blink.q; // BLINKING to indicate location
+        led[1] = middlestack.q; // no blinking to indicate location
+        led[0] = rightstack.q; // no blinking to indicate location    
         
         if (detectreset.out == 1){
           states.d = states.START;
@@ -235,9 +234,9 @@ module mojo_top (
           turn_blink.d = playerscores.q;
         }
         
-        io_led[2] = leftstack.q; // no blinking to indicate location
-        io_led[1] = middlestack.q; // no blinking to indicate location
-        io_led[0] = location_blink.q; // BLINKING to indicate location 
+        led[2] = leftstack.q; // no blinking to indicate location
+        led[1] = middlestack.q; // no blinking to indicate location
+        led[0] = location_blink.q; // BLINKING to indicate location 
         
         if (detectreset.out == 1){
           states.d = states.START;
@@ -285,9 +284,9 @@ module mojo_top (
           turn_blink.d = playerscores.q;
         }
         
-        io_led[2] = leftstack.q; // no blinking to indicate location
-        io_led[1] = location_blink.q; // BLINKING to indicate location
-        io_led[0] = rightstack.q; // no blinking to indicate location 
+        led[2] = leftstack.q; // no blinking to indicate location
+        led[1] = location_blink.q; // BLINKING to indicate location
+        led[0] = rightstack.q; // no blinking to indicate location 
         
         if (detectreset.out == 1){
           states.d = states.START;
@@ -337,9 +336,9 @@ module mojo_top (
           turn_blink.d = playerscores.q;
         }
         
-        io_led[2] = location_blink.q; // BLINKING to indicate location
-        io_led[1] = middlestack.q; // no blinking to indicate location
-        io_led[0] = rightstack.q; // no blinking to indicate location  
+        led[2] = location_blink.q; // BLINKING to indicate location
+        led[1] = middlestack.q; // no blinking to indicate location
+        led[0] = rightstack.q; // no blinking to indicate location  
         
         if (detectreset.out == 1){
           states.d = states.START;
@@ -387,9 +386,9 @@ module mojo_top (
           turn_blink.d = playerscores.q;
         }
         
-        io_led[2] = leftstack.q; // no blinking to indicate location
-        io_led[1] = middlestack.q; // no blinking to indicate location
-        io_led[0] = location_blink.q; // BLINKING to indicate location 
+        led[2] = leftstack.q; // no blinking to indicate location
+        led[1] = middlestack.q; // no blinking to indicate location
+        led[0] = location_blink.q; // BLINKING to indicate location 
         
         if (detectreset.out == 1){
           states.d = states.START;
