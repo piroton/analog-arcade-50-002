@@ -13,9 +13,11 @@ module mojo_top (
     input button,
     input io_reset,
     input io_startgame,
+    // NEEDS EDITING
     input io_button[2][4],  // I/O buttons
     output io_sel[4],       // Digit select on IO Shield
     output io_seg[8],       // 7-segment LEDs on IO Shield
+    // NEEDS EDITING IN CONSTRAINTS
     output led[3][10],
     // Necessary ALU inputs / outputs
     output getA[16],    // A
@@ -29,59 +31,62 @@ module mojo_top (
   sig rst;                  // reset signal
 
   // Checker signals; use ALU and check against one value
-  sig check1; 
+  sig checkEqualsZero; 
   sig check2;
-  // Assign ALU and stack randomizers
-  alu alu16; 
-  
-  /*
-  OPCODES FOR ALU:
-     ADD:   6b000000
-     SUB:   6b000001
-     AND:   6b011000
-     OR:    6b011110
-     XOR:   6b010110
-     "A":   6b011010
-     SHL:   6b100000
-     SHR:   6b100001
-     SRA:   6b100011
-     CMPEQ: 6b110011
-     CMPLT: 6b110101
-     CMPLE: 6b110111
-  */
+  // Assign ALU
+  alu alu16;
+
+  sig ADD = 6b000000;
+  sig SUB = 6b000001;
+  sig AND = 6b011000;
+  sig OR  = 6b011110;
+  sig XOR = 6b010110;
+  sig AONLY = 6b011010;
+  sig SHL = 6b100000;
+  sig SHR = 6b100001;
+  sig SRA = 6b100011;
+  sig CMPEQ = 6b110011;
+  sig CMPLE = 6b110101;
+  sig CMPLT = 6b110111;
   
   .clk(clk) {
     // The reset conditioner is used to synchronize the reset signal to the FPGA
     // clock. This ensures the entire FPGA comes out of reset at the same time.
     reset_conditioner reset_cond;
-    
 
-    /*
-    Button Detector circuits below:
-    */
+    // Button Detector circuits below:
     // EDGE DETECTORS (find falling edges to mark an input)
-    edge_detector detectleft(#RISE(0), #FALL(1)); // detect rising edges
-    edge_detector detectright(#RISE(0), #FALL(1));
-    edge_detector detectupremove1(#RISE(0), #FALL(1));
-    edge_detector detectdownremove2(#RISE(0), #FALL(1));
-    edge_detector detectreset(#RISE(0), #FALL(1));
-    edge_detector detectstart(#RISE(0), #FALL(1));
+    edge_detector detectMoveLP1(#RISE(0), #FALL(1));
+    edge_detector detectMoveRP1(#RISE(0), #FALL(1));
+    edge_detector detectUpRm1P1(#RISE(0), #FALL(1));
+    edge_detector detectDnRm2P1(#RISE(0), #FALL(1));
+    edge_detector detectMoveLP2(#RISE(0), #FALL(1));
+    edge_detector detectMoveRP2(#RISE(0), #FALL(1));
+    edge_detector detectUpRm1P2(#RISE(0), #FALL(1));
+    edge_detector detectDnRm2P2(#RISE(0), #FALL(1));
+    edge_detector detectReset(#RISE(0), #FALL(1));
+    edge_detector detectStart(#RISE(0), #FALL(1));
 
-    // BUTTON CONDITIONERS: 
-    button_conditioner buttonleft; // condition buttons
-    button_conditioner buttonright;
-    button_conditioner buttonupremove1;
-    button_conditioner buttondownremove2;
-    button_conditioner buttonreset;
-    button_conditioner buttonstartgame;
+    // BUTTON CONDITIONERS: Ensure clean input from buttons
+    button_conditioner buttonMoveLP1;
+    button_conditioner buttonMoveRP1;
+    button_conditioner buttonRemove1P1;
+    button_conditioner buttonRemove2P1;
+    
+    button_conditioner buttonMoveLP2;
+    button_conditioner buttonMoveRP2;
+    button_conditioner buttonRemove1P2;
+    button_conditioner buttonRemove2P2;
+    
+    button_conditioner buttonReset;
     
     .rst(rst){
       lfsr_rand randl;
       lfsr_rand randm;
       lfsr_rand randr;
-      dff leftstack[10](#INIT(10b1111111111)); // set left stack to 8
-      dff middlestack[10](#INIT(10b1111111111)); // set middle stack to 8
-      dff rightstack[10](#INIT(10b1111111111)); // set right stack to 8
+      dff leftstack[10](#INIT(10b1111111111)); // set left stack to 10
+      dff middlestack[10](#INIT(10b1111111111)); // set middle stack to 10
+      dff rightstack[10](#INIT(10b1111111111)); // set right stack to 10
             
       dff turn_blink[4][4](#INIT({4d0,4d0,4d0,4d0})); // blink to indicate player turn
       dff location_blink[8](#INIT(8b0)); // blink to indicate player location_blink
@@ -105,8 +110,8 @@ module mojo_top (
     spi_channel = bzzzz;    // not using flags
     avr_rx = bz;            // not using serial port
     
-    led[2] = leftstack.q;  // left stack LEDs
-    led[1] = middlestack.q;  // middle stack LEDs
+    led[2] = leftstack.q;   // left stack LEDs
+    led[1] = middlestack.q; // middle stack LEDs
     led[0] = rightstack.q;  // right stack LEDs
     
     io_seg = ~seg.seg; // connect segments to the driver
@@ -114,7 +119,31 @@ module mojo_top (
     seg.values = playerscores.q; // initialise player scores
     
     // Button Initializing
+    buttonReset.in = io_reset;
+    detectReset.in = buttonReset.out;
+
+    buttonMoveLP1.in = io_button[0][3];
+    buttonMoveRP1.in = io_button[0][4];
+    buttonRemove1P1.in = io_button[0][0];
+    buttonRemove2P1.in = io_button[0][2];
+
+    buttonMoveLP2.in = io_button[1][3];
+    buttonMoveRP2.in = io_button[1][4];
+    buttonRemove1P2.in = io_button[1][0];
+    buttonRemove2P2.in = io_button[1][2];
+
+    detectMoveLP1.in = buttonMoveLP1.out;
+    detectMoveRP1.in = buttonMoveRP1.out;
+    detectUpRm1P1.in = buttonRemove1P1.out;
+    detectDnRm2P1.in = buttonRemove2P1.out;
+
+    detectMoveLP2.in = buttonMoveLP2.out;
+    detectMoveRP2.in = buttonMoveRP2.out;
+    detectUpRm1P2.in = buttonRemove1P2.out;
+    detectDnRm2P2.in = buttonRemove2P2.out;
+
     
+    /*
     buttonleft.in = io_button[3];
     detectleft.in = buttonleft.out;
     buttonright.in = io_button[4];
@@ -126,23 +155,23 @@ module mojo_top (
     buttonstartgame.in = io_startgame;
     detectstart.in = buttonstartgame.out;
     buttonreset.in = io_reset;
-    detectreset.in = buttonreset.out;
+    detectreset.in = buttonreset.out;*/
+
+    // Activate randomisers
     randl.enable = 1;
     randm.enable = 1;
     randr.enable = 1;
     
-    // Init randomness meter
-
 
     case(states.q){
       states.START:
-        led[2] = randl.out; // no blinking to indicate location
+        /*led[2] = randl.out; // no blinking to indicate location
         led[1] = randm.out; // no blinking to indicate location
-        led[0] = randr.out; // no blinking to indicate location
+        led[0] = randr.out; // no blinking to indicate location*/
         seg.values = playerscores.q; // no blinking to indicate player turn
-        leftstack.d = 8b11111111;
-        middlestack.d = 8b11111111;
-        rightstack.d = 8b11111111;
+        leftstack.d   = randl.out;
+        middlestack.d = randm.out;
+        rightstack.d  = randr.out;
         if (detectstart.out == 1){
           states.d = states.P1M;
         } else {
@@ -155,29 +184,58 @@ module mojo_top (
         randr.enable = 0;
         seg.values = turn_blink.q;
         
+        /*
         if (turn_blink.q == playerscores.q){
           turn_blink.d[1:0] = playerscores.q[1:0];
           turn_blink.d[3:2] = {4b0,4b0};
-        }else{
+        } else {
           turn_blink.d = playerscores.q;
         }
-        
-        led[2] = leftstack.q; // no blinking to indicate location
+        led[2] = leftstack.q;   // no blinking to indicate location
         led[1] = location_blink.q; // BLINKING to indicate location
-        led[0] = rightstack.q; // no blinking to indicate location        
-        
+        led[0] = rightstack.q;  // no blinking to indicate location        
+        */
         if (detectreset.out == 1){
           states.d = states.START;
         }
-        
-        if (location_blink.q == middlestack.q){
-          location_blink.d = 8b0;
-        }else{
-          location_blink.d = middlestack.q;
+        alu16.b = 16b1;
+        alu16.alufn = CMPLT;
+        checkEqualsZero = alu16.out;
+        if(detectMoveLP1.out == 1){
+          alu16.a = leftstack.q;
+          if (checkEqualsZero == 0){
+            states.d = states.P1L;
+          } else {
+            states.d = states.P1M;
+          }
         }
-        
-        if(detectleft.out == 1){
-          if (leftstack.q >= 8b1){
+        if (detectMoveRP1.out == 1){
+          alu16.a = rightstack.q;
+          if (checkEqualsZero == 0){
+            states.d = states.P1L;
+          } else {
+            states.d = states.P1M;
+          }
+        }
+        if (detectUpRm1P1 == 1){
+          alu16.a = middlestack.q;
+          alu16.alufn = SHR;
+          middlestack.d = alu16.out;
+          states.d = states.P1C
+        } else{
+          states.d = states.P1M;
+        }
+        if (detectDnRm2P1 == 1){
+          alu16.a = middlestack.q;
+          alu16.b = 0b10;
+          alu16.alufn = SHR;
+          middlestack.d = alu16.out;
+          states.d = states.P1C;
+        } else {
+          states.d = states.P1M;
+        }
+            /*
+          if (leftstack.q >= 10b1){
             states.d = states.P1L;
           }else{
             states.d = states.P1M;
@@ -203,7 +261,7 @@ module mojo_top (
             states.d = states.P1M;
           }
         }
-        
+        */
       states.P1L:
         seg.values = turn_blink.q;
         
