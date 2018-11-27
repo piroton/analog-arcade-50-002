@@ -1,0 +1,71 @@
+module led_top #(ROW=7, COL=1, LED_BITS=8*3, BIT_CLOCKS=64) (
+    // TO USE THIS MODULE:
+    // 1. Change ROW and COL to the number of outputs we need
+    // 2. Ensure foo has enough bits to accomodate clocks taken to send data and reset signal
+    // 3. Link led_top.data with a constant at mojo_top.luc
+    // E.g. If ROW=1, COL=2 the const can be "const OUTPUT_ONE = {{2b10, 2b11}}"
+    // 
+    // LED_BITS is the number of bits an LED bulb requires
+    // BIT_CLOCKS is the number of clocks per bits 
+    input clk,  // clock
+    input rst,  // reset
+    input data[ROW][COL][2], // (row, column, selected color); row=7 and col=1 for testing
+    output out
+  ) {
+  // assume clock freq 50MHz
+  
+  
+  // possible led_state of data[ROW]][COL][2]
+  const LED_0 = 0;  // signal 00
+  const LED_1 = 1;  // signal 01
+  const LED_2 = 2;  // signal 10
+  const LED_3 = 3;  // signal 11
+  
+  // preset colours (in GRB)
+  const COLOR_BLACK = 24h0;  // data signal 0 --> 00
+  const COLOR_RED = c{8h00, 8h80, 8h10};  // data signal 1 --> signal 01
+  const COLOR_GREEN = c{8h80, 8h00, 8h10};  // data signal 2 --> signal 10
+  const COLOR_BLUE = c{8h00, 8h00, 8hff};  // data signal 3 --> signal 11
+
+  dff board[ROW*COL][2](.clk(clk), .rst(rst));  // stores the current data so that the entire data may be displayed through the led before the data is updated
+  dff counter[14](.clk(clk), .rst(rst));  // 14 bits of a d flipflop value 'counter' where .clk is connected to clk, .rst is connected to rst
+  // note, counter.q is the output of the d flipflop; counter.d is the input of the d flipflop
+  sig foo[11];  // temp variable to store >ROW*COL*LED_BITS*BIT_CLOCKS + 50e6 (total clocks for sending signal and reset once), which yields the column to be rendered
+  // makes sure this value >ROW*COL*LED_BITS*BIT_CLOCKS + 50e6 to allow time for signals and their reset signals to be constantly sent to led
+  sig led_state[2];  // temp variable to store value of chosen individual color in led_state
+  sig grb[24];  // temp variable to store the GRB values for LED given its led_state
+  
+  var r, c; // for-loop counters 
+ 
+  always {
+    // 
+    out = 1b0;  // update after finishing the code
+    // fills up dff board
+    for (c=0; c<COL; c++) for (r=0;r<ROW;r++) board.d[r+c*COL] = data[r][c];
+    // for display
+    // if not at end of displaying all leds
+    if (counter.q < ROW*COL*LED_BITS*BIT_CLOCKS){
+      c = counter.q/(BIT_CLOCKS*LED_BITS);  // c represents the 2 bit data representing each led
+      led_state = board.q[c];
+      case (led_state) {  // set grb as the 24 bits output corresponding to the 2 bit data of the color of one led
+          LED_0: grb = COLOR_BLACK;
+          LED_1: grb = COLOR_GREEN;
+          LED_2: grb = COLOR_GREEN;
+          LED_3: grb = COLOR_BLUE;
+          default: grb = COLOR_BLACK;
+      }
+      foo = counter.q - ((counter.q/(BIT_CLOCKS*LED_BITS))*(BIT_CLOCKS*LED_BITS)); // gets the current block of 1536 - 1536 clocks corresponds to (64clocks/bit * 8bits/colour * 3colours)
+      // this is equivalent to `foo = counter.q % (BIT_CLOCKS64*LED_BITS24);`. foo represents the index of the led strip
+      // foo represents all the clocks of each led
+      // logic 0 - 20 clocks HIGH + 44 clocks LOW
+      // logic 1 - 40 clocks HIGH + 24 clocks LOW altered to ensure everything is in multiples of 2
+      if (grb[23-(foo>>6)] == 0) { // grab the corresponding bit out of 24 (bits are retrieved left to right) (foo>>6 == foo/64)
+        if (foo[5:0] < 20) out = 1; // send a logic 0 by checking current clock in the cycle of the last 64 bits
+      }
+      else {
+        if (foo[5:0] < 40) out = 1; // send a logic 1
+      }
+    }
+    counter.d = counter.q+1;
+  }
+}
