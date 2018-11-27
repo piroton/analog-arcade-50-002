@@ -18,7 +18,7 @@ module mojo_top (
     output io_sel[4],       // Digit select on IO Shield
     output io_seg[8],       // 7-segment LEDs on IO Shield
     // NEEDS EDITING IN CONSTRAINTS
-    output led[3][10]
+    output led_strip
   ) {
   
   sig rst;                  // reset signal
@@ -111,6 +111,7 @@ module mojo_top (
     spi_channel = bzzzz;    // not using flags
     avr_rx = bz;            // not using serial port
     
+    // NOTE TO EDIT: ALL STACKS COME FROM SAME DATALINE
     led[2] = leftstack.q;   // left stack LEDs
     led[1] = middlestack.q; // middle stack LEDs
     led[0] = rightstack.q;  // right stack LEDs
@@ -119,10 +120,11 @@ module mojo_top (
     io_sel = ~seg.sel; // connect digits to the driver
     seg.values = playerscores.q; // initialise player scores
     
-    // initialise input of alu16 as 0 first, then change input accordingly later
+    // initialise inputs/outputs as 0 first, then change input accordingly later
     alu16.a = 16b0;
     alu16.b = 16b0;
     alu16.opcode = 6b0;
+    led_strip = 1b0;
     
     // Button Initializing
     buttonReset.in = io_reset;

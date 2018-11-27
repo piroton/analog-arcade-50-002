@@ -81,3 +81,6 @@ NET "io_button<1>" LOC = P140 | IOSTANDARD = LVTTL | PULLDOWN;
 NET "io_button<2>" LOC = P139 | IOSTANDARD = LVTTL | PULLDOWN;
 NET "io_button<3>" LOC = P142 | IOSTANDARD = LVTTL | PULLDOWN;
 NET "io_button<4>" LOC = P138 | IOSTANDARD = LVTTL | PULLDOWN;
+
+# led_strip is a test strip that contains the bulbs
+NET "led_strip" LOC = P51 | IOSTANDARD = LVTTL;
