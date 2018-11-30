@@ -13,7 +13,7 @@ module mojo_top (
     input button,
     input io_reset,
     input io_startgame,
-    // NEEDS EDITING
+    // NEEDS EDITING FOR EXTERNAL I/O
     input io_button[2][5],  // I/O buttons
     output io_sel[4],       // Digit select on IO Shield
     output io_seg[8],       // 7-segment LEDs on IO Shield
@@ -26,8 +26,17 @@ module mojo_top (
   // Checker signals; use ALU and check against one value
   sig checkEqualsZero; 
   sig checkOtherStack;
-  // Assign ALU
+  sig checkLessThanTwo;
+  sig checkLessThanOne;
+  sig checkLeftStackZero;
+  sig checkMiddleStackZero;
+  sig checkRightStackZero;
+  
+  // Initialise ALUs
   alu alu16;
+  alu leftalu16;    // ALU for left stack
+  alu middlealu16;  // ALU for middle stack
+  alu rightalu16;   // ALU for right stack
 
   const ADD = 6b000000;
   const SUB = 6b000001;
@@ -71,6 +80,7 @@ module mojo_top (
     button_conditioner buttonRemove1P2;
     button_conditioner buttonRemove2P2;
     
+    button_conditioner buttonStart;
     button_conditioner buttonReset;
     
     .rst(rst){
@@ -85,7 +95,7 @@ module mojo_top (
       dff location_blink[8](#INIT(8b0)); // blink to indicate player location_blink
       
       multi_seven_seg seg;
-      dff playerscores[4][4](#INIT({4d0,4d0,4d0,4d0}));
+      dff playerscores[4][4](#INIT({4d0,4d0,4d0,4d0}));  // left two scores for Player 1, right two scores for Player 2
     }
   }
   fsm states(.clk(clk), .rst(rst)) = {START, P1L, P1M, P1R, P1C, P2L, P2M, P2R, P2C};
@@ -124,9 +134,25 @@ module mojo_top (
     alu16.a = 16b0;
     alu16.b = 16b0;
     alu16.opcode = 6b0;
+    
+    leftalu16.a = 16b0;
+    leftalu16.b = 16b0;
+    leftalu16.opcode = 6b0;
+    
+    rightalu16.a = 16b0;
+    rightalu16.b = 16b0;
+    rightalu16.opcode = 6b0;
+    
+    middlealu16.a = 16b0;
+    middlealu16.b = 16b0;
+    middlealu16.opcode = 6b0;
+    
     led_strip = 1b0;
     
     // Button Initializing
+    buttonStart.in = io_startgame;
+    detectStart.in = buttonStart.out;
+    
     buttonReset.in = io_reset;
     detectReset.in = buttonReset.out;
 
@@ -177,7 +203,12 @@ module mojo_top (
         /*led[2] = randl.out; // no blinking to indicate location
         led[1] = randm.out; // no blinking to indicate location
         led[0] = randr.out; // no blinking to indicate location*/
-        seg.values = playerscores.q; // no blinking to indicate player turn
+        
+        randl.enable = 1;  // to re-randomise if player resets game
+        randm.enable = 1;
+        randr.enable = 1;
+        
+        seg.values = playerscores.q;
         leftstack.d   = randl.out;
         middlestack.d = randm.out;
         rightstack.d  = randr.out;
@@ -188,12 +219,14 @@ module mojo_top (
         }
         
       states.P1M:
+        seg.values = playerscores.q;
+        
         randl.enable = 0;
         randm.enable = 0;
         randr.enable = 0;
-        seg.values = turn_blink.q;
         
         /*
+
         if (turn_blink.q == playerscores.q){
           turn_blink.d[1:0] = playerscores.q[1:0];
           turn_blink.d[3:2] = {4b0,4b0};
@@ -207,99 +240,80 @@ module mojo_top (
         if (detectReset.out == 1){
           states.d = states.START;
         }
+        
         alu16.b = 16b1;
         alu16.opcode = CMPLT;
+        
         if(detectMoveLP1.out == 1){
           alu16.a = leftstack.q;
           checkEqualsZero = alu16.out[0];
           if (checkEqualsZero == 1){
-            states.d = states.P1L;
-          } else {
             states.d = states.P1M;
+          } else {
+            states.d = states.P1L;
           }
         }
-        if (detectMoveRP1.out == 1){
+        else if (detectMoveRP1.out == 1){
           alu16.a = rightstack.q;
           checkEqualsZero = alu16.out[0];
           if (checkEqualsZero == 1){
-            states.d = states.P1R;
+            states.d = states.P1M;
           } else {
-            states.d = states.P1M;
-          }
-        }
-        if (detectUpRm1P1.out == 1){
-          alu16.a = middlestack.q;
-          alu16.opcode = SHR;
-          middlestack.d = alu16.out;  // input of alu16 is alr at most 10 digits, so dropping most sig bit is ok
-          states.d = states.P1C;
-        } else{
-          states.d = states.P1M;
-        }
-        if (detectDnRm2P1.out == 1){
-          alu16.a = middlestack.q;
-          alu16.b = 16b11;
-          alu16.opcode = SHR;
-          middlestack.d = alu16.out;  // input of alu16 is alr at most 10 digits, so dropping most sig bit is ok
-          states.d = states.P1C;
-        } else {
-          states.d = states.P1M;
-        }
-            /*
-          if (leftstack.q >= 10b1){
-            states.d = states.P1L;
-          }else{
-            states.d = states.P1M;
-          }
-        }else if(detectMoveRP1.out == 1){
-          if (rightstack.q >= 8b1){
             states.d = states.P1R;
-          }else{
-            states.d = states.P1M;
-          }
-        }else if (detectDnRm2P1.out == 1){
-          if (middlestack.q >= 8b10){
-            middlestack.d = middlestack.q >> 2;
-            states.d = states.P1C;
-          }else{
-            states.d = states.P1M;
-          }
-        }else if (detectUpRm1P1.out == 1){
-          if (middlestack.q >= 8b1){
-            middlestack.d = middlestack.q >> 1;
-            states.d = states.P1C;
-          }else{
-            states.d = states.P1M;
           }
         }
-        */
+        else if (detectUpRm1P1.out == 1){
+          alu16.a = middlestack.q;
+          alu16.b = 16b1;
+          alu16.opcode = CMPLT;
+          checkLessThanOne = alu16.out;
+          
+          if (checkLessThanOne == 16b1){  // Check if there is enough LEDs left to shift right by 1
+            states.d = states.P1M;
+          }else{
+            alu16.opcode = SHR;
+            middlestack.d = alu16.out;  // input of alu16 is alr at most 10 digits, so dropping most sig bit is ok
+            states.d = states.P1C;
+          }
+        }
+        else if (detectDnRm2P1.out == 1){
+          alu16.a = middlestack.q;
+          alu16.b = 16b10;
+          alu16.opcode = CMPLT;
+          checkLessThanTwo = alu16.out;
+          
+          if (checkLessThanTwo == 16b1){  // Check if there is enough LEDs left to shift right by 2
+            states.d = states.P1M;
+          }else{
+            alu16.opcode = SHR;
+            middlestack.d = alu16.out;  // input of alu16 is alr at most 10 digits, so dropping most sig bit is ok
+            states.d = states.P1C;
+          }
+        }
+
       states.P1L:
-        seg.values = turn_blink.q;
+        seg.values = playerscores.q;
         
-        if (turn_blink.q == playerscores.q){
-          turn_blink.d[1:0] = playerscores.q[1:0];
-          turn_blink.d[3:2] = {4b0,4b0};
-        }else{
-          turn_blink.d = playerscores.q;
-        }
+        randl.enable = 0;
+        randm.enable = 0;
+        randr.enable = 0;
+        
         if (detectReset.out == 1){
           states.d = states.START;
         }
+        
         alu16.b = 16b1;
         alu16.opcode = CMPLT;
-        if (detectmoveLP1.out == 1){
-          alu16.a = leftstack.q;
-          checkEqualsZero = alu16.out[0];
-          if (checkEqualsZero == 1){
-            states.d = states.P1M;
-          } else {
-            states.d = states.P1L;
-          }
+        
+        if (detectMoveLP1.out == 1){
+          states.d = states.P1L;
         }
-        if (detectMoveRP1.out == 1) {
+        else if (detectMoveRP1.out == 1) {
           alu16.a = middlestack.q;
           checkEqualsZero = alu16.out[0];
           if (checkEqualsZero == 1){
             states.d = states.P1R;
+            
             alu16.a = rightstack.q;
             checkOtherStack = alu16.out[0];
             if (checkOtherStack == 1){
@@ -309,22 +323,45 @@ module mojo_top (
             states.d = states.P1M;
           }
         }
-        if (detectDnRm2P1.out == 1){
+        else if (detectUpRm1P1.out == 1){
           alu16.a = leftstack.q;
-          alu16.b = 16b100;
-          alu16.alufn = CMPLT;
-          checkEqualsZero = alu16.out[0];
-          if (checkEqualsZero == 0){
-            alu16.b = 16b10;
-            alu16.alufn = SHR;
-            leftstack.p = alu16.out;
-            states.d = states.P1C;
-          } else {
+          alu16.b = 16b1;
+          alu16.opcode = CMPLT;
+          checkLessThanOne = alu16.out;
+          
+          if (checkLessThanOne == 16b1){  // Check if there is enough LEDs left to shift right by 1
             states.d = states.P1L;
+          }else{
+            alu16.opcode = SHR;
+            leftstack.d = alu16.out;  // input of alu16 is alr at most 10 digits, so dropping most sig bit is ok
+            states.d = states.P1C;
+          }
+        }
+        else if (detectDnRm2P1.out == 1){
+          alu16.a = leftstack.q;
+          alu16.b = 16b10;
+          alu16.opcode = CMPLT;
+          checkLessThanTwo = alu16.out;
+          
+          if (checkLessThanTwo == 16b1){  // Check if there is enough LEDs left to shift right by 1
+            states.d = states.P1L;
+          }else{
+            alu16.opcode = SHR;
+            leftstack.d = alu16.out;  // input of alu16 is alr at most 10 digits, so dropping most sig bit is ok
+            states.d = states.P1C;
           }
         }
         
         /*
+        seg.values = turn_blink.q;
+           
+        if (turn_blink.q == playerscores.q){
+          turn_blink.d[1:0] = playerscores.q[1:0];
+          turn_blink.d[3:2] = {4b0,4b0};
+        }else{
+          turn_blink.d = playerscores.q;
+        }   
+        
         led[2] = location_blink.q; // BLINKING to indicate location
         led[1] = middlestack.q; // no blinking to indicate location
         led[0] = rightstack.q; // no blinking to indicate location    
@@ -334,236 +371,266 @@ module mojo_top (
         }else{
           location_blink.d = leftstack.q;  // CHECK WITH SAMSON WHAT DOES THAT MEAN
         } 
-        if(detectMoveLP1.out == 1){  // CHECK WITH SAMSON WHAT DOES THAT MEAN
-          states.d = states.P1L;
-        }else if(detectMoveRP1.out == 1){  // CHECK WITH SAMSON WHAT DOES THAT MEAN
-          if (middlestack.q >= 8b1){
-            states.d = states.P1M;
-          }else if (rightstack.q >= 8b1){
-            states.d = states.P1R;
-          }else{
-            states.d = states.P1L;
-          }
-        }else if (detectDnRm2P1.out == 1){  // CHECK WITH SAMSON WHAT DOES THAT MEAN
-          if (leftstack.q >= 8b10){
-            leftstack.d = leftstack.q >> 2;
-            states.d = states.P1C;
-          }else{
-            states.d = states.P1L;
-          }
-        }else if (detectUpRm1P1.out == 1){  // CHECK WITH SAMSON WHAT DOES THAT MEAN
-          if (leftstack.q >= 8b1){
-            leftstack.d = leftstack.q >> 1;
-            states.d = states.P1C;
-          }else{
-            states.d = states.P1L;
-          }
-        }
         */
+        
       states.P1R:
-        seg.values = turn_blink.q;
+        seg.values = playerscores.q;
         
-        if (turn_blink.q == playerscores.q){
-          turn_blink.d[1:0] = playerscores.q[1:0];
-          turn_blink.d[3:2] = {4b0,4b0};
-        }else{
-          turn_blink.d = playerscores.q;
-        }
+        randl.enable = 0;
+        randm.enable = 0;
+        randr.enable = 0;
         
-        led[2] = leftstack.q; // no blinking to indicate location
-        led[1] = middlestack.q; // no blinking to indicate location
-        led[0] = location_blink.q; // BLINKING to indicate location 
-        
-        if (detectReset.out == 1){  // CHECK WITH SAMSON WHAT DOES THAT MEAN
+        if (detectReset.out == 1){
           states.d = states.START;
         }
         
-        if (location_blink.q == rightstack.q){
-          location_blink.d = 8b0;
-        }else{
-          location_blink.d = rightstacktack.q;
-        }   
+        alu16.b = 16b1;
+        alu16.opcode = CMPLT;
         
-        if(detectMoveLP1.out == 1){
-          if (middlestack.q >= 8b1){
-            states.d = states.P1M;
-          }else if (leftstack.q >= 8b1){
+        if (detectMoveLP1.out == 1){
+          alu16.a = middlestack.q;
+          checkEqualsZero = alu16.out[0];
+          if (checkEqualsZero == 1){
             states.d = states.P1L;
-          }else{
-            states.d = states.P1R;
+            
+            alu16.a = leftstack.q;
+            checkOtherStack = alu16.out[0];
+            if (checkOtherStack == 1){
+              states.d = states.P1R;
+            }
+          } else {
+            states.d = states.P1M;
           }
-        }else if(detectMoveRP1.out == 1){
+        }
+        else if (detectMoveRP1.out == 1) {
           states.d = states.P1R;
-        }else if (detectDnRm2P1.out == 1){
-          if (rightstack.q >= 8b10){
-            rightstack.d = rightstack.q >> 2;
-            states.d = states.P1C;
-          }else{
+        }
+        else if (detectUpRm1P1.out == 1){
+          alu16.a = rightstack.q;
+          alu16.b = 16b1;
+          alu16.opcode = CMPLT;
+          checkLessThanOne = alu16.out;
+          
+          if (checkLessThanOne == 16b1){  // Check if there is enough LEDs left to shift right by 1
             states.d = states.P1R;
+          }else{
+            alu16.opcode = SHR;
+            rightstack.d = alu16.out;  // input of alu16 is alr at most 10 digits, so dropping most sig bit is ok
+            states.d = states.P1C;
           }
-        }else if (detectUpRm1P1.out == 1){
-          if (rightstack.q >= 8b1){
-            rightstack.d = rightstack.q >> 1;
-            states.d = states.P1C;
-          }else{
+        }
+        else if (detectDnRm2P1.out == 1){
+          alu16.a = rightstack.q;
+          alu16.b = 16b10;
+          alu16.opcode = CMPLT;
+          checkLessThanTwo = alu16.out;
+          
+          if (checkLessThanTwo == 16b1){  // Check if there is enough LEDs left to shift right by 1
             states.d = states.P1R;
+          }else{
+            alu16.opcode = SHR;
+            rightstack.d = alu16.out;  // input of alu16 is alr at most 10 digits, so dropping most sig bit is ok
+            states.d = states.P1C;
           }
         }
         
       states.P2M:
-        seg.values = turn_blink.q;
+        seg.values = playerscores.q;
         
-        if (turn_blink.q == playerscores.q){
-          turn_blink.d[3:2] = playerscores.q[3:2];
-          turn_blink.d[1:0] = {4b0,4b0};
-        }else{
-          turn_blink.d = playerscores.q;
-        }
-        
-        led[2] = leftstack.q; // no blinking to indicate location
-        led[1] = location_blink.q; // BLINKING to indicate location
-        led[0] = rightstack.q; // no blinking to indicate location 
+        randl.enable = 0;
+        randm.enable = 0;
+        randr.enable = 0;
         
         if (detectReset.out == 1){
           states.d = states.START;
         }
         
-        if (location_blink.q == middlestack.q){
-          location_blink.d = 8b0;
-        }else{
-          location_blink.d = middlestack.q;
-        }   
+        alu16.b = 16b1;
+        alu16.opcode = CMPLT;
         
-        if(detectMoveLP1.out == 1){
-          if (leftstack.q >= 8b1){
+        if (detectMoveLP1.out == 1){
+          alu16.a = leftstack.q;
+          checkEqualsZero = alu16.out[0];
+          if (checkEqualsZero == 1){
+            states.d = states.P2M;
+          }else{
             states.d = states.P2L;
-          }else{
-            states.d = states.P2M;
           }
-        }else if(detectMoveRP1.out == 1){
-          if (rightstack.q >= 8b1){
+        }
+        else if (detectMoveRP1.out == 1) {
+          alu16.a = rightstack.q;
+          checkEqualsZero = alu16.out[0];
+          if (checkEqualsZero == 1){
+            states.d = states.P2M;
+          }else{
             states.d = states.P2R;
-          }else{
-            states.d = states.P2M;
           }
-        }else if (detectDnRm2P1.out == 1){
-          if (middlestack.q >= 8b10){
-            middlestack.d = middlestack.q >> 2;
-            states.d = states.P2C;
-          }else{
+        }
+        else if (detectUpRm1P1.out == 1){
+          alu16.a = middlestack.q;
+          alu16.b = 16b1;
+          alu16.opcode = CMPLT;
+          checkLessThanOne = alu16.out;
+          
+          if (checkLessThanOne == 16b1){  // Check if there is enough LEDs left to shift right by 1
             states.d = states.P2M;
+          }else{
+            alu16.opcode = SHR;
+            rightstack.d = alu16.out;  // input of alu16 is alr at most 10 digits, so dropping most sig bit is ok
+            states.d = states.P2C;
           }
-        }else if (detectUpRm1P1.out == 1){
-          if (middlestack.q >= 8b1){
-            middlestack.d = middlestack.q >> 1;
-            states.d = states.P2C;
-          }else{
+        }
+        else if (detectDnRm2P1.out == 1){
+          alu16.a = middlestack.q;
+          alu16.b = 16b10;
+          alu16.opcode = CMPLT;
+          checkLessThanTwo = alu16.out;
+          
+          if (checkLessThanTwo == 16b1){  // Check if there is enough LEDs left to shift right by 1
             states.d = states.P2M;
+          }else{
+            alu16.opcode = SHR;
+            rightstack.d = alu16.out;  // input of alu16 is alr at most 10 digits, so dropping most sig bit is ok
+            states.d = states.P2C;
           }
         }
         
       states.P2L:
-        seg.values = turn_blink.q;
+        seg.values = playerscores.q;
         
-        if (turn_blink.q == playerscores.q){
-          turn_blink.d[3:2] = playerscores.q[3:2];
-          turn_blink.d[1:0] = {4b0,4b0};
-        }else{
-          turn_blink.d = playerscores.q;
-        }
-        
-        led[2] = location_blink.q; // BLINKING to indicate location
-        led[1] = middlestack.q; // no blinking to indicate location
-        led[0] = rightstack.q; // no blinking to indicate location  
+        randl.enable = 0;
+        randm.enable = 0;
+        randr.enable = 0;
         
         if (detectReset.out == 1){
           states.d = states.START;
         }
         
-        if (location_blink.q == leftstack.q){
-          location_blink.d = 8b0;
-        }else{
-          location_blink.d = leftstack.q;
-        }  
+        alu16.b = 16b1;
+        alu16.opcode = CMPLT;
         
-        if(detectMoveLP1.out == 1){
+        if (detectMoveLP1.out == 1){
           states.d = states.P2L;
-        }else if(detectMoveRP1.out == 1){
-          if (middlestack.q >= 8b1){
-            states.d = states.P2M;
-          }else if (rightstack.q >= 8b1){
+        }
+        else if (detectMoveRP1.out == 1) {
+          alu16.a = middlestack.q;
+          checkEqualsZero = alu16.out[0];
+          if (checkEqualsZero == 1){
             states.d = states.P2R;
-          }else{
-            states.d = states.P2L;
+            
+            alu16.a = rightstack.q;
+            checkOtherStack = alu16.out[0];
+            if (checkOtherStack == 1){
+              states.d = states.P2L;
+            }
+          } else {
+            states.d = states.P2M;
           }
-        }else if (detectDnRm2P1.out == 1){
-          if (leftstack.q >= 8b10){
-            leftstack.d = leftstack.q >> 2;
-            states.d = states.P2C;
-          }else{
+        }
+        else if (detectUpRm1P1.out == 1){
+          alu16.a = leftstack.q;
+          alu16.b = 16b1;
+          alu16.opcode = CMPLT;
+          checkLessThanOne = alu16.out;
+          
+          if (checkLessThanOne == 16b1){  // Check if there is enough LEDs left to shift right by 1
             states.d = states.P2L;
+          }else{
+            alu16.opcode = SHR;
+            leftstack.d = alu16.out;  // input of alu16 is alr at most 10 digits, so dropping most sig bit is ok
+            states.d = states.P2C;
           }
-        }else if (detectUpRm1P1.out == 1){
-          if (leftstack.q >= 8b1){
-            leftstack.d = leftstack.q >> 1;
-            states.d = states.P2C;
-          }else{
+        }
+        else if (detectDnRm2P1.out == 1){
+          alu16.a = leftstack.q;
+          alu16.b = 16b10;
+          alu16.opcode = CMPLT;
+          checkLessThanTwo = alu16.out;
+          
+          if (checkLessThanTwo == 16b1){  // Check if there is enough LEDs left to shift right by 1
             states.d = states.P2L;
+          }else{
+            alu16.opcode = SHR;
+            leftstack.d = alu16.out;  // input of alu16 is alr at most 10 digits, so dropping most sig bit is ok
+            states.d = states.P2C;
           }
         }
         
       states.P2R:
-        seg.values = turn_blink.q;
+        seg.values = playerscores.q;
         
-        if (turn_blink.q == playerscores.q){
-          turn_blink.d[3:2] = playerscores.q[3:2];
-          turn_blink.d[1:0] = {4b0,4b0};
-        }else{
-          turn_blink.d = playerscores.q;
-        }
-        
-        led[2] = leftstack.q; // no blinking to indicate location
-        led[1] = middlestack.q; // no blinking to indicate location
-        led[0] = location_blink.q; // BLINKING to indicate location 
+        randl.enable = 0;
+        randm.enable = 0;
+        randr.enable = 0;
         
         if (detectReset.out == 1){
           states.d = states.START;
         }
         
-        if (location_blink.q == rightstack.q){
-          location_blink.d = 8b0;
-        }else{
-          location_blink.d = rightstack.q;
-        }   
+        alu16.b = 16b1;
+        alu16.opcode = CMPLT;
         
-        if(detectMoveLP1.out == 1){
-          if (middlestack.q >= 8b1){
-            states.d = states.P2M;
-          }else if (leftstack.q >= 8b1){
+        if (detectMoveLP1.out == 1){
+          alu16.a = middlestack.q;
+          checkEqualsZero = alu16.out[0];
+          if (checkEqualsZero == 1){
             states.d = states.P2L;
-          }else{
-            states.d = states.P2R;
+            
+            alu16.a = leftstack.q;
+            checkOtherStack = alu16.out[0];
+            if (checkOtherStack == 1){
+              states.d = states.P2R;
+            }
+          } else {
+            states.d = states.P2M;
           }
-        }else if(detectMoveRP1.out == 1){
+        }
+        else if (detectMoveRP1.out == 1) {
           states.d = states.P2R;
-        }else if (detectDnRm2P1.out == 1){
-          if (rightstack.q >= 8b10){
-            rightstack.d = rightstack.q >> 2;
-            states.d = states.P2C;
-          }else{
+        }
+        else if (detectUpRm1P1.out == 1){
+          alu16.a = rightstack.q;
+          alu16.b = 16b1;
+          alu16.opcode = CMPLT;
+          checkLessThanOne = alu16.out;
+          
+          if (checkLessThanOne == 16b1){  // Check if there is enough LEDs left to shift right by 1
             states.d = states.P2R;
+          }else{
+            alu16.opcode = SHR;
+            rightstack.d = alu16.out;  // input of alu16 is alr at most 10 digits, so dropping most sig bit is ok
+            states.d = states.P2C;
           }
-        }else if (detectUpRm1P1.out == 1){
-          if (rightstack.q >= 8b1){
-            rightstack.d = rightstack.q >> 1;
-            states.d = states.P2C;
-          }else{
+        }
+        else if (detectDnRm2P1.out == 1){
+          alu16.a = rightstack.q;
+          alu16.b = 16b10;
+          alu16.opcode = CMPLT;
+          checkLessThanTwo = alu16.out;
+          
+          if (checkLessThanTwo == 16b1){  // Check if there is enough LEDs left to shift right by 1
             states.d = states.P2R;
+          }else{
+            alu16.opcode = SHR;
+            rightstack.d = alu16.out;  // input of alu16 is alr at most 10 digits, so dropping most sig bit is ok
+            states.d = states.P2C;
           }
         }
         
       states.P1C:
-        if (leftstack.q == 8b0 && middlestack.q == 8b0 && rightstack.q == 8b0){
+        leftalu16.a = leftstack.q;
+        leftalu16.b = 8b0;
+        leftalu16.opcode = CMPEQ;
+        
+        middlealu16.a = middlestack.q;
+        middlealu16.b = 8b0;
+        middlealu16.opcode = CMPEQ;
+        
+        rightalu16.a = rightstack.q;
+        rightalu16.b = 8b0;
+        rightalu16.opcode = CMPEQ;
+        
+        if (leftalu16.out && middlealu16.out && rightalu16.out){    // If all stacks are empty, restart game
           if (playerscores.q[2] == 4d9){
             playerscores.d[2] = 4d0;
             playerscores.d[3] = playerscores.q[3] + 4d1;
@@ -572,9 +639,21 @@ module mojo_top (
           }
           states.d = states.START;
         }else{
-          if (middlestack.q >= 8b1){
+          leftalu16.a = leftstack.q;
+          leftalu16.b = 8b1;
+          leftalu16.opcode = CMPLT;
+        
+          middlealu16.a = middlestack.q;
+          middlealu16.b = 8b1;
+          middlealu16.opcode = CMPLT;
+        
+          rightalu16.a = rightstack.q;
+          rightalu16.b = 8b1;
+          rightalu16.opcode = CMPLT;
+                    
+          if (!middlealu16.out){
             states.d = states.P2M;
-          }else if (leftstack.q >= 8b1){
+          }else if (!leftalu16.out){
             states.d = states.P2L;
           }else{
             states.d = states.P2R;
@@ -582,7 +661,19 @@ module mojo_top (
         }
           
       states.P2C:
-        if (leftstack.q == 8b0 && middlestack.q == 8b0 && rightstack.q == 8b0){
+        leftalu16.a = leftstack.q;
+        leftalu16.b = 8b0;
+        leftalu16.opcode = CMPEQ;
+        
+        middlealu16.a = middlestack.q;
+        middlealu16.b = 8b0;
+        middlealu16.opcode = CMPEQ;
+        
+        rightalu16.a = rightstack.q;
+        rightalu16.b = 8b0;
+        rightalu16.opcode = CMPEQ;
+        
+        if (leftalu16.out && middlealu16.out && rightalu16.out){    // If all stacks are empty, restart game
           if (playerscores.q[0] == 4d9){
             playerscores.d[0] = 0;
             playerscores.d[1] = playerscores.q[1] + 4d1;
@@ -591,12 +682,24 @@ module mojo_top (
           }
           states.d = states.START;
         }else{
-          if (middlestack.q >= 8b1){
-            states.d = states.P1M;
-          }else if (leftstack.q >= 8b1){
-            states.d = states.P1L;
+          leftalu16.a = leftstack.q;
+          leftalu16.b = 8b1;
+          leftalu16.opcode = CMPLT;
+        
+          middlealu16.a = middlestack.q;
+          middlealu16.b = 8b1;
+          middlealu16.opcode = CMPLT;
+        
+          rightalu16.a = rightstack.q;
+          rightalu16.b = 8b1;
+          rightalu16.opcode = CMPLT;
+                    
+          if (!middlealu16.out){
+            states.d = states.P2M;
+          }else if (!leftalu16.out){
+            states.d = states.P2L;
           }else{
-            states.d = states.P1R;
+            states.d = states.P2R;
           }
         }
         
