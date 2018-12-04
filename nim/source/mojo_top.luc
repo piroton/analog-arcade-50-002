@@ -34,9 +34,6 @@ module mojo_top (
   
   // Initialise ALUs
   alu alu16;
-  alu leftalu16;    // ALU for left stack
-  alu middlealu16;  // ALU for middle stack
-  alu rightalu16;   // ALU for right stack
 
   const ADD = 6b000000;
   const SUB = 6b000001;
@@ -134,18 +131,6 @@ module mojo_top (
     alu16.a = 16b0;
     alu16.b = 16b0;
     alu16.opcode = 6b0;
-    
-    leftalu16.a = 16b0;
-    leftalu16.b = 16b0;
-    leftalu16.opcode = 6b0;
-    
-    rightalu16.a = 16b0;
-    rightalu16.b = 16b0;
-    rightalu16.opcode = 6b0;
-    
-    middlealu16.a = 16b0;
-    middlealu16.b = 16b0;
-    middlealu16.opcode = 6b0;
     
     led_strip = 1b0;
     
@@ -618,19 +603,11 @@ module mojo_top (
         }
         
       states.P1C:
-        leftalu16.a = leftstack.q;
-        leftalu16.b = 8b0;
-        leftalu16.opcode = CMPEQ;
+        alu16.a = leftstack.q;
+        alu16.b = 8b0;
+        alu16.opcode = CMPEQ;
         
-        middlealu16.a = middlestack.q;
-        middlealu16.b = 8b0;
-        middlealu16.opcode = CMPEQ;
-        
-        rightalu16.a = rightstack.q;
-        rightalu16.b = 8b0;
-        rightalu16.opcode = CMPEQ;
-        
-        if (leftalu16.out && middlealu16.out && rightalu16.out){    // If all stacks are empty, restart game
+        if (alu16.out && middlestack.q == 16b0 && rightstack.q == 16b0){    // If all stacks are empty, restart game
           if (playerscores.q[2] == 4d9){
             playerscores.d[2] = 4d0;
             playerscores.d[3] = playerscores.q[3] + 4d1;
@@ -639,21 +616,13 @@ module mojo_top (
           }
           states.d = states.START;
         }else{
-          leftalu16.a = leftstack.q;
-          leftalu16.b = 8b1;
-          leftalu16.opcode = CMPLT;
-        
-          middlealu16.a = middlestack.q;
-          middlealu16.b = 8b1;
-          middlealu16.opcode = CMPLT;
-        
-          rightalu16.a = rightstack.q;
-          rightalu16.b = 8b1;
-          rightalu16.opcode = CMPLT;
+          alu16.a = leftstack.q;
+          alu16.b = 8b1;
+          alu16.opcode = CMPLT;
                     
-          if (!middlealu16.out){
+          if (middlestack.q >= 8b1){
             states.d = states.P2M;
-          }else if (!leftalu16.out){
+          }else if (!alu16.out){
             states.d = states.P2L;
           }else{
             states.d = states.P2R;
@@ -661,19 +630,11 @@ module mojo_top (
         }
           
       states.P2C:
-        leftalu16.a = leftstack.q;
-        leftalu16.b = 8b0;
-        leftalu16.opcode = CMPEQ;
+        alu16.a = leftstack.q;
+        alu16.b = 8b0;
+        alu16.opcode = CMPEQ;
         
-        middlealu16.a = middlestack.q;
-        middlealu16.b = 8b0;
-        middlealu16.opcode = CMPEQ;
-        
-        rightalu16.a = rightstack.q;
-        rightalu16.b = 8b0;
-        rightalu16.opcode = CMPEQ;
-        
-        if (leftalu16.out && middlealu16.out && rightalu16.out){    // If all stacks are empty, restart game
+        if (alu16.out && middlestack.q == 16b0 && rightstack.q == 16b0){    // If all stacks are empty, restart game
           if (playerscores.q[0] == 4d9){
             playerscores.d[0] = 0;
             playerscores.d[1] = playerscores.q[1] + 4d1;
@@ -682,21 +643,13 @@ module mojo_top (
           }
           states.d = states.START;
         }else{
-          leftalu16.a = leftstack.q;
-          leftalu16.b = 8b1;
-          leftalu16.opcode = CMPLT;
+          alu16.a = leftstack.q;
+          alu16.b = 8b1;
+          alu16.opcode = CMPLT;
         
-          middlealu16.a = middlestack.q;
-          middlealu16.b = 8b1;
-          middlealu16.opcode = CMPLT;
-        
-          rightalu16.a = rightstack.q;
-          rightalu16.b = 8b1;
-          rightalu16.opcode = CMPLT;
-                    
-          if (!middlealu16.out){
+          if (middlestack.q >= 16b0){
             states.d = states.P2M;
-          }else if (!leftalu16.out){
+          }else if (!alu16.out){
             states.d = states.P2L;
           }else{
             states.d = states.P2R;
