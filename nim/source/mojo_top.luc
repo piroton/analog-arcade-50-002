@@ -1,4 +1,4 @@
-module mojo_top (
+module mojo_top #(ROW=10, COL=6)(
     input clk,              // 50MHz clock
     input rst_n,            // reset button (active low)
     input cclk,             // configuration clock, AVR ready when high
@@ -93,6 +93,20 @@ module mojo_top (
       
       multi_seven_seg seg;
       dff playerscores[4][4](#INIT({4d0,4d0,4d0,4d0}));  // left two scores for Player 1, right two scores for Player 2
+      
+      // initializes all components for the led
+      led_manager led_manager(#ROW(ROW), #COL(COL));
+      led_top led_top(#ROW(ROW), #COL(COL));
+      dff led_output[ROW][COL][2](#INIT({{b00,b00,b00,b00,b00,b00},
+                                         {b00,b00,b00,b00,b00,b00},
+                                         {b00,b00,b00,b00,b00,b00},
+                                         {b00,b00,b00,b00,b00,b00},
+                                         {b00,b00,b00,b00,b00,b00},
+                                         {b00,b00,b00,b00,b00,b00},
+                                         {b00,b00,b00,b00,b00,b00},
+                                         {b00,b00,b00,b00,b00,b00},
+                                         {b00,b00,b00,b00,b00,b00},
+                                         {b00,b00,b00,b00,b00,b00}}));
     }
   }
   fsm states(.clk(clk), .rst(rst)) = {START, P1L, P1M, P1R, P1C, P2L, P2M, P2R, P2C};
@@ -110,18 +124,12 @@ module mojo_top (
     reset_cond.in = ~rst_n; // input raw inverted reset signal
     rst = reset_cond.out;   // conditioned reset
     
-    led = 3x{{10b0}};
     io_seg = 8hff;          // turn segments off
     io_sel = 4hf;           // select no digits
     
     spi_miso = bz;          // not using SPI
     spi_channel = bzzzz;    // not using flags
     avr_rx = bz;            // not using serial port
-    
-    // NOTE TO EDIT: ALL STACKS COME FROM SAME DATALINE
-    led[2] = leftstack.q;   // left stack LEDs
-    led[1] = middlestack.q; // middle stack LEDs
-    led[0] = rightstack.q;  // right stack LEDs
     
     io_seg = ~seg.seg; // connect segments to the driver
     io_sel = ~seg.sel; // connect digits to the driver
@@ -132,7 +140,14 @@ module mojo_top (
     alu16.b = 16b0;
     alu16.opcode = 6b0;
     
-    led_strip = 1b0;
+    // ----- ALL LED STUFF -----
+    // updates the led strip whenever leftstack, middlestack, or rightstack is changed
+    led_manager.leftstack = leftstack.q;
+    led_manager.middlestack = middlestack.q;
+    led_manager.rightstack = rightstack.q;
+    led_output.d = led_manager.led_output;
+    led_top.data = led_output.q;
+    led_strip = led_top.out;
     
     // Button Initializing
     buttonStart.in = io_startgame;
@@ -160,7 +175,6 @@ module mojo_top (
     detectMoveRP2.in = buttonMoveRP2.out;
     detectUpRm1P2.in = buttonRemove1P2.out;
     detectDnRm2P2.in = buttonRemove2P2.out;
-
     
     // Commented out as we're using external IOs now
     /*
@@ -197,11 +211,13 @@ module mojo_top (
         leftstack.d   = randl.out;
         middlestack.d = randm.out;
         rightstack.d  = randr.out;
+        
         if (detectStart.out == 1){
           states.d = states.P1M;
         } else {
           states.d = states.START;
         }
+        
         
       states.P1M:
         seg.values = playerscores.q;
@@ -275,6 +291,7 @@ module mojo_top (
             states.d = states.P1C;
           }
         }
+        
 
       states.P1L:
         seg.values = playerscores.q;
@@ -336,6 +353,7 @@ module mojo_top (
             states.d = states.P1C;
           }
         }
+        
         
         /*
         seg.values = turn_blink.q;
@@ -419,6 +437,7 @@ module mojo_top (
           }
         }
         
+        
       states.P2M:
         seg.values = playerscores.q;
         
@@ -479,6 +498,7 @@ module mojo_top (
             states.d = states.P2C;
           }
         }
+        
         
       states.P2L:
         seg.values = playerscores.q;
@@ -541,6 +561,7 @@ module mojo_top (
           }
         }
         
+        
       states.P2R:
         seg.values = playerscores.q;
         
@@ -601,6 +622,7 @@ module mojo_top (
             states.d = states.P2C;
           }
         }
+        
         
       states.P1C:
         alu16.a = leftstack.q;

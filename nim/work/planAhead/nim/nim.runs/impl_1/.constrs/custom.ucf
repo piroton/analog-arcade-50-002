@@ -1,0 +1,54 @@
+# Deleted led and io_dip connections from io_shield.ucf
+
+
+NET "clk" TNM_NET = "clk";
+
+
+
+NET "P1BL" LOC = P1 | IOSTANDARD = LVTTL | PULLDOWN;
+NET "P1BM" LOC = P2 | IOSTANDARD = LVTTL | PULLDOWN;
+NET "P1BR" LOC = P3 | IOSTANDARD = LVTTL | PULLDOWN;
+NET "P1R1" LOC = P1 | IOSTANDARD = LVTTL | PULLDOWN;
+NET "P1R2" LOC = P1 | IOSTANDARD = LVTTL | PULLDOWN;
+NET "P2BL" LOC = P1 | IOSTANDARD = LVTTL | PULLDOWN;
+NET "P2BM" LOC = P1 | IOSTANDARD = LVTTL | PULLDOWN;
+NET "P2BR" LOC = P1 | IOSTANDARD = LVTTL | PULLDOWN;
+NET "P2R1" LOC = P1 | IOSTANDARD = LVTTL | PULLDOWN;
+NET "P2R2" LOC = P1 | IOSTANDARD = LVTTL | PULLDOWN;
+
+
+
+NET "io_led<0>"  LOC = P97 | IOSTANDARD = LVTTL;
+NET "io_led<1>"  LOC = P98 | IOSTANDARD = LVTTL;
+NET "io_led<2>" LOC = P94 | IOSTANDARD = LVTTL;
+NET "io_led<3>" LOC = P95 | IOSTANDARD = LVTTL;
+NET "io_led<4>" LOC = P92 | IOSTANDARD = LVTTL;
+NET "io_led<5>" LOC = P93 | IOSTANDARD = LVTTL;
+NET "io_led<6>" LOC = P87 | IOSTANDARD = LVTTL;
+NET "io_led<7>" LOC = P88 | IOSTANDARD = LVTTL;
+
+NET "io_led<8>" LOC = P84 | IOSTANDARD = LVTTL;
+NET "io_led<9>" LOC = P85 | IOSTANDARD = LVTTL;
+NET "io_led<10>" LOC = P82 | IOSTANDARD = LVTTL;
+NET "io_led<11>" LOC = P83 | IOSTANDARD = LVTTL;
+NET "io_led<12>" LOC = P80 | IOSTANDARD = LVTTL;
+NET "io_led<13>" LOC = P81 | IOSTANDARD = LVTTL;
+NET "io_led<14>" LOC = P11 | IOSTANDARD = LVTTL;
+NET "io_led<15>" LOC = P14 | IOSTANDARD = LVTTL;
+
+NET "io_led<16>" LOC = P15 | IOSTANDARD = LVTTL;
+NET "io_led<17>" LOC = P16 | IOSTANDARD = LVTTL;
+NET "io_led<18>" LOC = P17 | IOSTANDARD = LVTTL;
+NET "io_led<19>" LOC = P21 | IOSTANDARD = LVTTL;
+NET "io_led<20>" LOC = P22 | IOSTANDARD = LVTTL;
+NET "io_led<21>" LOC = P23 | IOSTANDARD = LVTTL;
+NET "io_led<22>" LOC = P24 | IOSTANDARD = LVTTL;
+NET "io_led<23>" LOC = P26 | IOSTANDARD = LVTTL;
+
+
+
+# PULLDOWN is needed to prevent floating inputs
+
+# led_strip is a test strip that contains the bulbs
+NET "led_strip" LOC = P51;
+NET "led_strip" IOSTANDARD = LVTTL;

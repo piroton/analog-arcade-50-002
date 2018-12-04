@@ -1,0 +1,83 @@
+module led_manager #(ROW=10, COL=6)(
+    input clk,  // clock
+    input rst,  // reset
+    input leftstack[10],
+    input middlestack[10],
+    input rightstack[10],
+    output led_output[ROW][COL][2]
+  ) {
+
+  always {
+    // Purpose: link leftstack, middlestack and rightstack to led_output
+    // array according to their respective columns and rows.
+    // 
+    // -------- led output --------
+        // leftstack column 1
+        led_output[0][0][1] = leftstack[0];
+        led_output[1][0][1] = leftstack[1];
+        led_output[2][0][1] = leftstack[2];
+        led_output[3][0][1] = leftstack[3];
+        led_output[4][0][1] = leftstack[4];
+        led_output[5][0][1] = leftstack[5];
+        led_output[6][0][1] = leftstack[6];
+        led_output[7][0][1] = leftstack[7];
+        led_output[8][0][1] = leftstack[8];
+        led_output[9][0][1] = leftstack[9];
+        // leftstack column 2
+        led_output[0][1][1] = leftstack[0];
+        led_output[1][1][1] = leftstack[1];
+        led_output[2][1][1] = leftstack[2];
+        led_output[3][1][1] = leftstack[3];
+        led_output[4][1][1] = leftstack[4];
+        led_output[5][1][1] = leftstack[5];
+        led_output[6][1][1] = leftstack[6];
+        led_output[7][1][1] = leftstack[7];
+        led_output[8][1][1] = leftstack[8];
+        led_output[9][1][1] = leftstack[9];
+        // middlesck column 3
+        led_output[0][2][1] = middlestack[0];
+        led_output[1][2][1] = middlestack[1];
+        led_output[2][2][1] = middlestack[2];
+        led_output[3][2][1] = middlestack[3];
+        led_output[4][2][1] = middlestack[4];
+        led_output[5][2][1] = middlestack[5];
+        led_output[6][2][1] = middlestack[6];
+        led_output[7][2][1] = middlestack[7];
+        led_output[8][2][1] = middlestack[8];
+        led_output[9][2][1] = middlestack[9];
+        // middlestack column 4
+        led_output[0][3][1] = middlestack[0];
+        led_output[1][3][1] = middlestack[1];
+        led_output[2][3][1] = middlestack[2];
+        led_output[3][3][1] = middlestack[3];
+        led_output[4][3][1] = middlestack[4];
+        led_output[5][3][1] = middlestack[5];
+        led_output[6][3][1] = middlestack[6];
+        led_output[7][3][1] = middlestack[7];
+        led_output[8][3][1] = middlestack[8];
+        led_output[9][3][1] = middlestack[9];
+        // rightstack column 3
+        led_output[0][4][1] = rightstack[0];
+        led_output[1][4][1] = rightstack[1];
+        led_output[2][4][1] = rightstack[2];
+        led_output[3][4][1] = rightstack[3];
+        led_output[4][4][1] = rightstack[4];
+        led_output[5][4][1] = rightstack[5];
+        led_output[6][4][1] = rightstack[6];
+        led_output[7][4][1] = rightstack[7];
+        led_output[8][4][1] = rightstack[8];
+        led_output[9][4][1] = rightstack[9];
+        // rightstack column 4
+        led_output[0][5][1] = rightstack[0];
+        led_output[1][5][1] = rightstack[1];
+        led_output[2][5][1] = rightstack[2];
+        led_output[3][5][1] = rightstack[3];
+        led_output[4][5][1] = rightstack[4];
+        led_output[5][5][1] = rightstack[5];
+        led_output[6][5][1] = rightstack[6];
+        led_output[7][5][1] = rightstack[7];
+        led_output[8][5][1] = rightstack[8];
+        led_output[9][5][1] = rightstack[9];
+        
+  }
+}

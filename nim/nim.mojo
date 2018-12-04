@@ -7,6 +7,7 @@
     <src>storevalues.luc</src>
     <src>multi_seven_seg.luc</src>
     <src top="true">mojo_top.luc</src>
+    <src>led_manager.luc</src>
     <src>addsub.luc</src>
     <src>alu.luc</src>
     <src>seven_seg.luc</src>

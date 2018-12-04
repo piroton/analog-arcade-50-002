@@ -5,6 +5,9 @@ module led_top #(ROW=7, COL=1, LED_BITS=8*3, BIT_CLOCKS=64) (
     // 3. Link led_top.data with a constant at mojo_top.luc
     // E.g. If ROW=1, COL=2 the const can be "const OUTPUT_ONE = {{2b10, 2b11}}"
     // 
+    // Purpose: Takes data array as input and outputs a single output as data line 
+    // to led strip.
+    // 
     // LED_BITS is the number of bits an LED bulb requires
     // BIT_CLOCKS is the number of clocks per bits 
     input clk,  // clock
