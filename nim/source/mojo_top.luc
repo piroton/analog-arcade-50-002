@@ -1,4 +1,4 @@
-module mojo_top #(ROW=10, COL=6)(
+module mojo_top #(ROW=10, COL=1)(
     input clk,              // 50MHz clock
     input rst_n,            // reset button (active low)
     input cclk,             // configuration clock, AVR ready when high
@@ -18,7 +18,9 @@ module mojo_top #(ROW=10, COL=6)(
     output io_sel[4],       // Digit select on IO Shield
     output io_seg[8],       // 7-segment LEDs on IO Shield
     // NEEDS EDITING IN CONSTRAINTS
-    output led_strip
+    output led_strip0,
+    output led_strip1,
+    output led_strip2
   ) {
   
   sig rst;                  // reset signal
@@ -96,17 +98,41 @@ module mojo_top #(ROW=10, COL=6)(
       
       // initializes all components for the led
       led_manager led_manager(#ROW(ROW), #COL(COL));
-      led_top led_top(#ROW(ROW), #COL(COL));
-      dff led_output[ROW][COL][2](#INIT({{b00,b00,b00,b00,b00,b00},
-                                         {b00,b00,b00,b00,b00,b00},
-                                         {b00,b00,b00,b00,b00,b00},
-                                         {b00,b00,b00,b00,b00,b00},
-                                         {b00,b00,b00,b00,b00,b00},
-                                         {b00,b00,b00,b00,b00,b00},
-                                         {b00,b00,b00,b00,b00,b00},
-                                         {b00,b00,b00,b00,b00,b00},
-                                         {b00,b00,b00,b00,b00,b00},
-                                         {b00,b00,b00,b00,b00,b00}}));
+      led_top led_top0(#ROW(ROW), #COL(COL));
+      led_top led_top1(#ROW(ROW), #COL(COL));
+      led_top led_top2(#ROW(ROW), #COL(COL));
+      
+      dff counter[14];
+      dff led_output0[ROW][COL][2](#INIT({{b00},
+                                          {b00},
+                                          {b00},
+                                          {b00},
+                                          {b00},
+                                          {b00},
+                                          {b00},
+                                          {b00},
+                                          {b00},
+                                          {b00}}));
+      dff led_output1[ROW][COL][2](#INIT({{b00},
+                                          {b00},
+                                          {b00},
+                                          {b00},
+                                          {b00},
+                                          {b00},
+                                          {b00},
+                                          {b00},
+                                          {b00},
+                                          {b00}}));
+      dff led_output2[ROW][COL][2](#INIT({{b00},
+                                          {b00},
+                                          {b00},
+                                          {b00},
+                                          {b00},
+                                          {b00},
+                                          {b00},
+                                          {b00},
+                                          {b00},
+                                          {b00}}));
     }
   }
   fsm states(.clk(clk), .rst(rst)) = {START, P1L, P1M, P1R, P1C, P2L, P2M, P2R, P2C};
@@ -145,9 +171,18 @@ module mojo_top #(ROW=10, COL=6)(
     led_manager.leftstack = leftstack.q;
     led_manager.middlestack = middlestack.q;
     led_manager.rightstack = rightstack.q;
-    led_output.d = led_manager.led_output;
-    led_top.data = led_output.q;
-    led_strip = led_top.out;
+    // left led strip
+    led_output0.d = led_manager.led_output0;
+    led_top0.data = led_output0.q;  // send data into led_top to produce signals
+    led_strip0 = led_top0.out;  // send signals to led strip
+    // middle led strip
+    led_output1.d = led_manager.led_output1;
+    led_top1.data = led_output1.q;  // send data into led_top to produce signals
+    led_strip1 = led_top1.out;  // send signals to led strip
+    // right led strip
+    led_output2.d = led_manager.led_output2;
+    led_top2.data = led_output2.q;  // send data into led_top to produce signals
+    led_strip2 = led_top2.out;  // send signals to led strip
     
     // Button Initializing
     buttonStart.in = io_startgame;

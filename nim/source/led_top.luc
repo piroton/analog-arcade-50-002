@@ -1,4 +1,4 @@
-module led_top #(ROW=7, COL=1, LED_BITS=8*3, BIT_CLOCKS=64) (
+module led_top #(ROW=10, COL=1, LED_BITS=8*3, BIT_CLOCKS=64) (
     // TO USE THIS MODULE:
     // 1. Change ROW and COL to the number of outputs we need
     // 2. Ensure foo has enough bits to accomodate clocks taken to send data and reset signal

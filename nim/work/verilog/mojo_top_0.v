@@ -22,7 +22,9 @@ module mojo_top_0 (
     input [9:0] io_button,
     output reg [3:0] io_sel,
     output reg [7:0] io_seg,
-    output reg led_strip
+    output reg led_strip0,
+    output reg led_strip1,
+    output reg led_strip2
   );
   
   
@@ -279,7 +281,9 @@ module mojo_top_0 (
     .sel(M_seg_sel)
   );
   reg [15:0] M_playerscores_d, M_playerscores_q = 16'h0000;
-  wire [120-1:0] M_led_manager_led_output;
+  wire [20-1:0] M_led_manager_led_output0;
+  wire [20-1:0] M_led_manager_led_output1;
+  wire [20-1:0] M_led_manager_led_output2;
   reg [10-1:0] M_led_manager_leftstack;
   reg [10-1:0] M_led_manager_middlestack;
   reg [10-1:0] M_led_manager_rightstack;
@@ -289,9 +293,38 @@ module mojo_top_0 (
     .leftstack(M_led_manager_leftstack),
     .middlestack(M_led_manager_middlestack),
     .rightstack(M_led_manager_rightstack),
-    .led_output(M_led_manager_led_output)
+    .led_output0(M_led_manager_led_output0),
+    .led_output1(M_led_manager_led_output1),
+    .led_output2(M_led_manager_led_output2)
   );
-  reg [119:0] M_led_output_d, M_led_output_q = 120'h000000000000000000000000000000;
+  wire [1-1:0] M_led_top0_out;
+  reg [20-1:0] M_led_top0_data;
+  led_top_28 led_top0 (
+    .clk(clk),
+    .rst(rst),
+    .data(M_led_top0_data),
+    .out(M_led_top0_out)
+  );
+  wire [1-1:0] M_led_top1_out;
+  reg [20-1:0] M_led_top1_data;
+  led_top_28 led_top1 (
+    .clk(clk),
+    .rst(rst),
+    .data(M_led_top1_data),
+    .out(M_led_top1_out)
+  );
+  wire [1-1:0] M_led_top2_out;
+  reg [20-1:0] M_led_top2_data;
+  led_top_28 led_top2 (
+    .clk(clk),
+    .rst(rst),
+    .data(M_led_top2_data),
+    .out(M_led_top2_out)
+  );
+  reg [13:0] M_counter_d, M_counter_q = 1'h0;
+  reg [19:0] M_led_output0_d, M_led_output0_q = 20'h00000;
+  reg [19:0] M_led_output1_d, M_led_output1_q = 20'h00000;
+  reg [19:0] M_led_output2_d, M_led_output2_q = 20'h00000;
   
   
   localparam START_states = 4'd0;
@@ -310,7 +343,9 @@ module mojo_top_0 (
     M_states_d = M_states_q;
     M_playerscores_d = M_playerscores_q;
     M_middlestack_d = M_middlestack_q;
-    M_led_output_d = M_led_output_q;
+    M_led_output0_d = M_led_output0_q;
+    M_led_output1_d = M_led_output1_q;
+    M_led_output2_d = M_led_output2_q;
     M_leftstack_d = M_leftstack_q;
     M_rightstack_d = M_rightstack_q;
     
@@ -330,8 +365,15 @@ module mojo_top_0 (
     M_led_manager_leftstack = M_leftstack_q;
     M_led_manager_middlestack = M_middlestack_q;
     M_led_manager_rightstack = M_rightstack_q;
-    M_led_output_d = M_led_manager_led_output;
-    led_strip = 1'h0;
+    M_led_output0_d = M_led_manager_led_output0;
+    M_led_top0_data = M_led_output0_q;
+    led_strip0 = M_led_top0_out;
+    M_led_output1_d = M_led_manager_led_output1;
+    M_led_top1_data = M_led_output1_q;
+    led_strip1 = M_led_top1_out;
+    M_led_output2_d = M_led_manager_led_output2;
+    M_led_top2_data = M_led_output2_q;
+    led_strip2 = M_led_top2_out;
     M_buttonStart_in = io_startgame;
     M_detectStart_in = M_buttonStart_out;
     M_buttonReset_in = io_reset;
@@ -777,22 +819,16 @@ module mojo_top_0 (
   
   always @(posedge clk) begin
     if (rst == 1'b1) begin
-      M_states_q <= 1'h0;
-    end else begin
-      M_states_q <= M_states_d;
-    end
-  end
-  
-  
-  always @(posedge clk) begin
-    if (rst == 1'b1) begin
       M_leftstack_q <= 10'h3ff;
       M_middlestack_q <= 10'h3ff;
       M_rightstack_q <= 10'h3ff;
       M_turn_blink_q <= 16'h0000;
       M_location_blink_q <= 8'h00;
       M_playerscores_q <= 16'h0000;
-      M_led_output_q <= 120'h000000000000000000000000000000;
+      M_counter_q <= 1'h0;
+      M_led_output0_q <= 20'h00000;
+      M_led_output1_q <= 20'h00000;
+      M_led_output2_q <= 20'h00000;
     end else begin
       M_leftstack_q <= M_leftstack_d;
       M_middlestack_q <= M_middlestack_d;
@@ -800,7 +836,19 @@ module mojo_top_0 (
       M_turn_blink_q <= M_turn_blink_d;
       M_location_blink_q <= M_location_blink_d;
       M_playerscores_q <= M_playerscores_d;
-      M_led_output_q <= M_led_output_d;
+      M_counter_q <= M_counter_d;
+      M_led_output0_q <= M_led_output0_d;
+      M_led_output1_q <= M_led_output1_d;
+      M_led_output2_q <= M_led_output2_d;
+    end
+  end
+  
+  
+  always @(posedge clk) begin
+    if (rst == 1'b1) begin
+      M_states_q <= 1'h0;
+    end else begin
+      M_states_q <= M_states_d;
     end
   end
   

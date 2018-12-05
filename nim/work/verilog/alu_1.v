@@ -24,7 +24,7 @@ module alu_1 (
   reg [6-1:0] M_bool_opcode;
   reg [16-1:0] M_bool_a;
   reg [16-1:0] M_bool_b;
-  bool_28 bool (
+  bool_31 bool (
     .opcode(M_bool_opcode),
     .a(M_bool_a),
     .b(M_bool_b),
@@ -39,7 +39,7 @@ module alu_1 (
   reg [6-1:0] M_addr_opcode;
   reg [16-1:0] M_addr_a;
   reg [16-1:0] M_addr_b;
-  adder_29 addr (
+  adder_32 addr (
     .opcode(M_addr_opcode),
     .a(M_addr_a),
     .b(M_addr_b),
@@ -55,7 +55,7 @@ module alu_1 (
   reg [1-1:0] M_comp_z;
   reg [1-1:0] M_comp_n;
   reg [1-1:0] M_comp_v;
-  comparator_30 comp (
+  comparator_33 comp (
     .opcode(M_comp_opcode),
     .z(M_comp_z),
     .n(M_comp_n),
@@ -67,7 +67,7 @@ module alu_1 (
   reg [6-1:0] M_bits_opcode;
   reg [16-1:0] M_bits_a;
   reg [16-1:0] M_bits_b;
-  bitshift_31 bits (
+  bitshift_34 bits (
     .opcode(M_bits_opcode),
     .a(M_bits_a),
     .b(M_bits_b),
