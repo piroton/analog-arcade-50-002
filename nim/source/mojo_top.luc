@@ -1,4 +1,17 @@
 module mojo_top #(ROW=10, COL=1)(
+    // added io_leds to display current state
+    // states.START - io_led[0][0]
+    // states.P1M - io_led[0][1]
+    // states.P1L - io_led[0][2]
+    // states.P1R - io_led[0][3]
+    // states.P2M - io_led[0][4]
+    // states.P2L - io_led[0][5]
+    // states.P2R - io_led[0][6]
+    // states.P1C - io_led[0][7]
+    // states.P2C - io_led[1][0]
+    
+    
+    
     input clk,              // 50MHz clock
     input rst_n,            // reset button (active low)
     input cclk,             // configuration clock, AVR ready when high
@@ -20,7 +33,13 @@ module mojo_top #(ROW=10, COL=1)(
     // NEEDS EDITING IN CONSTRAINTS
     output led_strip0,
     output led_strip1,
-    output led_strip2
+    output led_strip2,
+    
+    
+    // To test if change of state is displayed on led
+    output io_led [3][8],   // LEDs on IO Shield
+    input io_dip[3][8],
+    input test_button 
   ) {
   
   sig rst;                  // reset signal
@@ -82,7 +101,24 @@ module mojo_top #(ROW=10, COL=1)(
     button_conditioner buttonStart;
     button_conditioner buttonReset;
     
+    
+    // To test if change of state is displayed on led
+    edge_detector detectTest(#RISE(0), #FALL(1));
+    button_conditioner buttonTest;            
+    
     .rst(rst){
+      // To test if change of state is displayed on led
+      dff test_led0(#INIT(b0));
+      dff test_led1(#INIT(b0));
+      dff test_led2(#INIT(b0));
+      dff test_led3(#INIT(b0));
+      dff test_led4(#INIT(b0));
+      dff test_led5(#INIT(b0));
+      dff test_led6(#INIT(b0));
+      dff test_led7(#INIT(b0));
+      dff test_led8(#INIT(b0));
+      
+      
       lfsr_rand randl;
       lfsr_rand randm;
       lfsr_rand randr;
@@ -146,7 +182,24 @@ module mojo_top #(ROW=10, COL=1)(
   // P2R: player 2 right stack
   // P2C: end of player 2's turn, in here we check if player 2 wins
   
+  
   always {
+    
+    // To test if change of state is displayed on led
+    buttonTest.in = test_button;
+    detectTest.in = buttonTest.out;
+    io_led = io_dip;
+    io_led[0][0] = test_led0.q;
+    io_led[0][1] = test_led1.q;
+    io_led[0][2] = test_led2.q;
+    io_led[0][3] = test_led3.q;
+    io_led[0][4] = test_led4.q;
+    io_led[0][5] = test_led5.q;
+    io_led[0][6] = test_led6.q;
+    io_led[0][7] = test_led7.q;
+    io_led[1][0] = test_led8.q;
+    
+    
     reset_cond.in = ~rst_n; // input raw inverted reset signal
     rst = reset_cond.out;   // conditioned reset
     
@@ -234,6 +287,18 @@ module mojo_top #(ROW=10, COL=1)(
 
     case(states.q){
       states.START:
+        // To test if change of state is displayed on led
+        test_led0.d = b1;
+        test_led1.d = b0;
+        test_led2.d = b0;
+        test_led3.d = b0;
+        test_led4.d = b0;
+        test_led5.d = b0;
+        test_led6.d = b0;
+        test_led7.d = b0;
+        test_led8.d = b0;
+        
+        
         /*led[2] = randl.out; // no blinking to indicate location
         led[1] = randm.out; // no blinking to indicate location
         led[0] = randr.out; // no blinking to indicate location*/
@@ -247,7 +312,7 @@ module mojo_top #(ROW=10, COL=1)(
         middlestack.d = randm.out;
         rightstack.d  = randr.out;
         
-        if (detectStart.out == 1){
+        if (detectTest.out == 1){
           states.d = states.P1M;
         } else {
           states.d = states.START;
@@ -255,6 +320,18 @@ module mojo_top #(ROW=10, COL=1)(
         
         
       states.P1M:
+        // To test if change of state is displayed on led
+        test_led0.d = b0;
+        test_led1.d = b1;
+        test_led2.d = b0;
+        test_led3.d = b0;
+        test_led4.d = b0;
+        test_led5.d = b0;
+        test_led6.d = b0;
+        test_led7.d = b0;
+        test_led8.d = b0;
+        
+        
         seg.values = playerscores.q;
         
         randl.enable = 0;
@@ -329,6 +406,18 @@ module mojo_top #(ROW=10, COL=1)(
         
 
       states.P1L:
+        // To test if change of state is displayed on led
+        test_led0.d = b0;
+        test_led1.d = b0;
+        test_led2.d = b1;
+        test_led3.d = b0;
+        test_led4.d = b0;
+        test_led5.d = b0;
+        test_led6.d = b0;
+        test_led7.d = b0;
+        test_led8.d = b0;
+        
+        
         seg.values = playerscores.q;
         
         randl.enable = 0;
@@ -412,6 +501,18 @@ module mojo_top #(ROW=10, COL=1)(
         */
         
       states.P1R:
+        // To test if change of state is displayed on led
+        test_led0.d = b0;
+        test_led1.d = b0;
+        test_led2.d = b0;
+        test_led3.d = b1;
+        test_led4.d = b0;
+        test_led5.d = b0;
+        test_led6.d = b0;
+        test_led7.d = b0;
+        test_led8.d = b0;
+        
+        
         seg.values = playerscores.q;
         
         randl.enable = 0;
@@ -474,6 +575,19 @@ module mojo_top #(ROW=10, COL=1)(
         
         
       states.P2M:
+        // To test if change of state is displayed on led
+        test_led0.d = b0;
+        test_led1.d = b0;
+        test_led2.d = b0;
+        test_led3.d = b0;
+        test_led4.d = b1;
+        test_led5.d = b0;
+        test_led6.d = b0;
+        test_led7.d = b0;
+        test_led8.d = b0;
+        
+        
+        
         seg.values = playerscores.q;
         
         randl.enable = 0;
@@ -536,6 +650,19 @@ module mojo_top #(ROW=10, COL=1)(
         
         
       states.P2L:
+        // To test if change of state is displayed on led
+        test_led0.d = b0;
+        test_led1.d = b0;
+        test_led2.d = b0;
+        test_led3.d = b0;
+        test_led4.d = b0;
+        test_led5.d = b1;
+        test_led6.d = b0;
+        test_led7.d = b0;
+        test_led8.d = b0;
+        
+        
+        
         seg.values = playerscores.q;
         
         randl.enable = 0;
@@ -598,6 +725,19 @@ module mojo_top #(ROW=10, COL=1)(
         
         
       states.P2R:
+        // To test if change of state is displayed on led
+        test_led0.d = b0;
+        test_led1.d = b0;
+        test_led2.d = b0;
+        test_led3.d = b0;
+        test_led4.d = b0;
+        test_led5.d = b0;
+        test_led6.d = b1;
+        test_led7.d = b0;
+        test_led8.d = b0;
+        
+        
+        
         seg.values = playerscores.q;
         
         randl.enable = 0;
@@ -660,6 +800,19 @@ module mojo_top #(ROW=10, COL=1)(
         
         
       states.P1C:
+        // To test if change of state is displayed on led
+        test_led0.d = b0;
+        test_led1.d = b0;
+        test_led2.d = b0;
+        test_led3.d = b0;
+        test_led4.d = b0;
+        test_led5.d = b0;
+        test_led6.d = b0;
+        test_led7.d = b1;
+        test_led8.d = b0;
+        
+        
+        
         alu16.a = leftstack.q;
         alu16.b = 8b0;
         alu16.opcode = CMPEQ;
@@ -687,6 +840,19 @@ module mojo_top #(ROW=10, COL=1)(
         }
           
       states.P2C:
+        // To test if change of state is displayed on led
+        test_led0.d = b0;
+        test_led1.d = b0;
+        test_led2.d = b0;
+        test_led3.d = b0;
+        test_led4.d = b0;
+        test_led5.d = b0;
+        test_led6.d = b0;
+        test_led7.d = b0;
+        test_led8.d = b1;
+        
+        
+        
         alu16.a = leftstack.q;
         alu16.b = 8b0;
         alu16.opcode = CMPEQ;

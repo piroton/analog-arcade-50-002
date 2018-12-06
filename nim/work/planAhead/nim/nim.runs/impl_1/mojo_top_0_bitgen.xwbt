@@ -1,0 +1,8 @@
+INTSTYLE=pa
+INFILE=/home/ubuntu/Desktop/50002_1D/analog-arcade-50-002/nim/work/planAhead/nim/nim.runs/impl_1/mojo_top_0_routed.ncd
+OUTFILE=/home/ubuntu/Desktop/50002_1D/analog-arcade-50-002/nim/work/planAhead/nim/nim.runs/impl_1/mojo_top_0.bit
+FAMILY=Spartan6
+PART=xc6slx9-2tqg144
+WORKINGDIR=/home/ubuntu/Desktop/50002_1D/analog-arcade-50-002/nim/work/planAhead/nim/nim.runs/impl_1
+LICENSE=WebPack
+USER_INFO=211601673_0_0_358

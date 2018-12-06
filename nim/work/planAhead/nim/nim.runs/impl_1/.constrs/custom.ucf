@@ -1,0 +1,33 @@
+# Deleted led and io_dip connections from io_shield.ucf
+
+# for testing
+NET "test_button" LOC = P33;
+NET "test_button" IOSTANDARD = LVTTL;
+
+
+NET "clk" TNM_NET = "clk";
+
+
+
+NET "P1BL" LOC = P1 | IOSTANDARD = LVTTL | PULLDOWN;
+NET "P1BM" LOC = P2 | IOSTANDARD = LVTTL | PULLDOWN;
+NET "P1BR" LOC = P3 | IOSTANDARD = LVTTL | PULLDOWN;
+NET "P1R1" LOC = P1 | IOSTANDARD = LVTTL | PULLDOWN;
+NET "P1R2" LOC = P1 | IOSTANDARD = LVTTL | PULLDOWN;
+NET "P2BL" LOC = P1 | IOSTANDARD = LVTTL | PULLDOWN;
+NET "P2BM" LOC = P1 | IOSTANDARD = LVTTL | PULLDOWN;
+NET "P2BR" LOC = P1 | IOSTANDARD = LVTTL | PULLDOWN;
+NET "P2R1" LOC = P1 | IOSTANDARD = LVTTL | PULLDOWN;
+NET "P2R2" LOC = P1 | IOSTANDARD = LVTTL | PULLDOWN;
+
+
+
+
+
+
+
+
+# PULLDOWN is needed to prevent floating inputs
+
+# led_strip is a test strip that contains the bulbs
+NET "led_strip" LOC = P51 | IOSTANDARD = LVTTL;
