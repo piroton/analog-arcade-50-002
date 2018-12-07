@@ -1,16 +1,4 @@
-module mojo_top #(ROW=10, COL=1)(
-    // added io_leds to display current state
-    // states.START - io_led[0][0]
-    // states.P1M - io_led[0][1]
-    // states.P1L - io_led[0][2]
-    // states.P1R - io_led[0][3]
-    // states.P2M - io_led[0][4]
-    // states.P2L - io_led[0][5]
-    // states.P2R - io_led[0][6]
-    // states.P1C - io_led[0][7]
-    // states.P2C - io_led[1][0]
-    
-    
+module mojo_top #(ROW=1, COL=1)(
     
     input clk,              // 50MHz clock
     input rst_n,            // reset button (active low)
@@ -23,59 +11,66 @@ module mojo_top #(ROW=10, COL=1)(
     input avr_tx,           // AVR TX (FPGA RX)
     output avr_rx,          // AVR RX (FPGA TX)
     input avr_rx_busy,      // AVR RX buffer full
-    input button,
-    input io_reset,
-    input io_startgame,
-    // NEEDS EDITING FOR EXTERNAL I/O
-    input io_button[2][5],  // I/O buttons
-    output io_sel[4],       // Digit select on IO Shield
-    output io_seg[8],       // 7-segment LEDs on IO Shield
-    // NEEDS EDITING IN CONSTRAINTS
-    output led_strip0,
-    output led_strip1,
-    output led_strip2,
+    input p1right_button,
+    input p1left_button,
+    input p1rm1_button,
+    input p1rm2_button,
+    input p2right_button,
+    input p2left_button,
+    input p2rm1_button,
+    input p2rm2_button,
+    output io_led[3][8],
     
+    output led_wire_0_0,
+    output led_wire_0_1,
+    output led_wire_0_2,
+    output led_wire_0_3,
+    output led_wire_0_4,
+    output led_wire_0_5,
+    output led_wire_0_6,
+    output led_wire_0_7,
+    output led_wire_0_8,
+    output led_wire_0_9,
     
-    // To test if change of state is displayed on led
-    output io_led [3][8],   // LEDs on IO Shield
-    input io_dip[3][8],
-    input test_button 
+    output led_wire_1_0,
+    output led_wire_1_1,
+    output led_wire_1_2,
+    output led_wire_1_3,
+    output led_wire_1_4,
+    output led_wire_1_5,
+    output led_wire_1_6,
+    output led_wire_1_7,
+    output led_wire_1_8,
+    output led_wire_1_9,
+    
+    output led_wire_2_0,
+    output led_wire_2_1,
+    output led_wire_2_2,
+    output led_wire_2_3,
+    output led_wire_2_4,
+    output led_wire_2_5,
+    output led_wire_2_6,
+    output led_wire_2_7,
+    output led_wire_2_8,
+    output led_wire_2_9
   ) {
   
   sig rst;                  // reset signal
-
-  // Checker signals; use ALU and check against one value
-  sig checkEqualsZero; 
-  sig checkOtherStack;
-  sig checkLessThanTwo;
-  sig checkLessThanOne;
-  sig checkLeftStackZero;
-  sig checkMiddleStackZero;
-  sig checkRightStackZero;
   
-  // Initialise ALUs
+  // Initialise ALU
   alu alu16;
 
-  const ADD = 6b000000;
-  const SUB = 6b000001;
-  const AND = 6b011000;
-  const OR  = 6b011110;
-  const XOR = 6b010110;
-  const AONLY = 6b011010;
-  const SHL = 6b100000;
   const SHR = 6b100001;
-  const SRA = 6b100011;
   const CMPEQ = 6b110011;
-  const CMPLE = 6b110101;
-  const CMPLT = 6b110111;
+  const CMPLT = 6b110101;
   
   .clk(clk) {
     // The reset conditioner is used to synchronize the reset signal to the FPGA
     // clock. This ensures the entire FPGA comes out of reset at the same time.
     reset_conditioner reset_cond;
 
-    // Button Detector circuits below:
     // EDGE DETECTORS (find falling edges to mark an input)
+    // up button is button 1P1/1P2, down button is button 2P1/2P2
     edge_detector detectMoveLP1(#RISE(0), #FALL(1));
     edge_detector detectMoveRP1(#RISE(0), #FALL(1));
     edge_detector detectUpRm1P1(#RISE(0), #FALL(1));
@@ -84,8 +79,6 @@ module mojo_top #(ROW=10, COL=1)(
     edge_detector detectMoveRP2(#RISE(0), #FALL(1));
     edge_detector detectUpRm1P2(#RISE(0), #FALL(1));
     edge_detector detectDnRm2P2(#RISE(0), #FALL(1));
-    edge_detector detectReset(#RISE(0), #FALL(1));
-    edge_detector detectStart(#RISE(0), #FALL(1));
 
     // BUTTON CONDITIONERS: Ensure clean input from buttons
     button_conditioner buttonMoveLP1;
@@ -97,48 +90,51 @@ module mojo_top #(ROW=10, COL=1)(
     button_conditioner buttonMoveRP2;
     button_conditioner buttonRemove1P2;
     button_conditioner buttonRemove2P2;
-    
-    button_conditioner buttonStart;
-    button_conditioner buttonReset;
-    
-    
-    // To test if change of state is displayed on led
-    edge_detector detectTest(#RISE(0), #FALL(1));
-    button_conditioner buttonTest;            
+               
     
     .rst(rst){
-      // To test if change of state is displayed on led
-      dff test_led0(#INIT(b0));
-      dff test_led1(#INIT(b0));
-      dff test_led2(#INIT(b0));
-      dff test_led3(#INIT(b0));
-      dff test_led4(#INIT(b0));
-      dff test_led5(#INIT(b0));
-      dff test_led6(#INIT(b0));
-      dff test_led7(#INIT(b0));
-      dff test_led8(#INIT(b0));
-      
-      
       lfsr_rand randl;
       lfsr_rand randm;
       lfsr_rand randr;
+      
+      // initializes all components for the led
+      led_top led_top0_0(#ROW(ROW), #COL(COL));
+      led_top led_top0_1(#ROW(ROW), #COL(COL));
+      led_top led_top0_2(#ROW(ROW), #COL(COL));
+      led_top led_top0_3(#ROW(ROW), #COL(COL));
+      led_top led_top0_4(#ROW(ROW), #COL(COL));
+      led_top led_top0_5(#ROW(ROW), #COL(COL));
+      led_top led_top0_6(#ROW(ROW), #COL(COL));
+      led_top led_top0_7(#ROW(ROW), #COL(COL));
+      led_top led_top0_8(#ROW(ROW), #COL(COL));
+      led_top led_top0_9(#ROW(ROW), #COL(COL));
+      
+      led_top led_top1_0(#ROW(ROW), #COL(COL));
+      led_top led_top1_1(#ROW(ROW), #COL(COL));
+      led_top led_top1_2(#ROW(ROW), #COL(COL));
+      led_top led_top1_3(#ROW(ROW), #COL(COL));
+      led_top led_top1_4(#ROW(ROW), #COL(COL));
+      led_top led_top1_5(#ROW(ROW), #COL(COL));
+      led_top led_top1_6(#ROW(ROW), #COL(COL));
+      led_top led_top1_7(#ROW(ROW), #COL(COL));
+      led_top led_top1_8(#ROW(ROW), #COL(COL));
+      led_top led_top1_9(#ROW(ROW), #COL(COL));
+      
+      led_top led_top2_0(#ROW(ROW), #COL(COL));
+      led_top led_top2_1(#ROW(ROW), #COL(COL));
+      led_top led_top2_2(#ROW(ROW), #COL(COL));
+      led_top led_top2_3(#ROW(ROW), #COL(COL));
+      led_top led_top2_4(#ROW(ROW), #COL(COL));
+      led_top led_top2_5(#ROW(ROW), #COL(COL));
+      led_top led_top2_6(#ROW(ROW), #COL(COL));
+      led_top led_top2_7(#ROW(ROW), #COL(COL));
+      led_top led_top2_8(#ROW(ROW), #COL(COL));
+      led_top led_top2_9(#ROW(ROW), #COL(COL));
+      
       dff leftstack[10](#INIT(10b1111111111)); // set left stack to 10
       dff middlestack[10](#INIT(10b1111111111)); // set middle stack to 10
       dff rightstack[10](#INIT(10b1111111111)); // set right stack to 10
             
-      dff turn_blink[4][4](#INIT({4d0,4d0,4d0,4d0})); // blink to indicate player turn
-      dff location_blink[8](#INIT(8b0)); // blink to indicate player location_blink
-      
-      multi_seven_seg seg;
-      dff playerscores[4][4](#INIT({4d0,4d0,4d0,4d0}));  // left two scores for Player 1, right two scores for Player 2
-      
-      // initializes all components for the led
-      led_manager led_manager(#ROW(ROW), #COL(COL));
-      led_top led_top0(#ROW(ROW), #COL(COL));
-      led_top led_top1(#ROW(ROW), #COL(COL));
-      led_top led_top2(#ROW(ROW), #COL(COL));
-      
-      dff counter[14];
       dff led_output0[ROW][COL][2](#INIT({{b00},
                                           {b00},
                                           {b00},
@@ -171,6 +167,7 @@ module mojo_top #(ROW=10, COL=1)(
                                           {b00}}));
     }
   }
+  
   fsm states(.clk(clk), .rst(rst)) = {START, P1L, P1M, P1R, P1C, P2L, P2M, P2R, P2C};
   // states
   // P1L: player 1 left stack
@@ -184,75 +181,127 @@ module mojo_top #(ROW=10, COL=1)(
   
   
   always {
+    led_top0_0.data[0][0][0] = leftstack.q[0];
+    led_top0_1.data[0][0][0] = leftstack.q[1];
+    led_top0_2.data[0][0][0] = leftstack.q[2];
+    led_top0_3.data[0][0][0] = leftstack.q[3];
+    led_top0_4.data[0][0][0] = leftstack.q[4];
+    led_top0_5.data[0][0][0] = leftstack.q[5];
+    led_top0_6.data[0][0][0] = leftstack.q[6];
+    led_top0_7.data[0][0][0] = leftstack.q[7];
+    led_top0_8.data[0][0][0] = leftstack.q[8];
+    led_top0_9.data[0][0][0] = leftstack.q[9];
     
-    // To test if change of state is displayed on led
-    buttonTest.in = test_button;
-    detectTest.in = buttonTest.out;
-    io_led = io_dip;
-    io_led[0][0] = test_led0.q;
-    io_led[0][1] = test_led1.q;
-    io_led[0][2] = test_led2.q;
-    io_led[0][3] = test_led3.q;
-    io_led[0][4] = test_led4.q;
-    io_led[0][5] = test_led5.q;
-    io_led[0][6] = test_led6.q;
-    io_led[0][7] = test_led7.q;
-    io_led[1][0] = test_led8.q;
+    led_top0_0.data[0][0][1] = b0;
+    led_top0_1.data[0][0][1] = b0;
+    led_top0_2.data[0][0][1] = b0;
+    led_top0_3.data[0][0][1] = b0;
+    led_top0_4.data[0][0][1] = b0;
+    led_top0_5.data[0][0][1] = b0;
+    led_top0_6.data[0][0][1] = b0;
+    led_top0_7.data[0][0][1] = b0;
+    led_top0_8.data[0][0][1] = b0;
+    led_top0_9.data[0][0][1] = b0;
     
+    led_top1_0.data[0][0][0] = middlestack.q[0];
+    led_top1_1.data[0][0][0] = middlestack.q[1];
+    led_top1_2.data[0][0][0] = middlestack.q[2];
+    led_top1_3.data[0][0][0] = middlestack.q[3];
+    led_top1_4.data[0][0][0] = middlestack.q[4];
+    led_top1_5.data[0][0][0] = middlestack.q[5];
+    led_top1_6.data[0][0][0] = middlestack.q[6];
+    led_top1_7.data[0][0][0] = middlestack.q[7];
+    led_top1_8.data[0][0][0] = middlestack.q[8];
+    led_top1_9.data[0][0][0] = middlestack.q[9];
+    
+    led_top1_0.data[0][0][1] = b0;
+    led_top1_1.data[0][0][1] = b0;
+    led_top1_2.data[0][0][1] = b0;
+    led_top1_3.data[0][0][1] = b0;
+    led_top1_4.data[0][0][1] = b0;
+    led_top1_5.data[0][0][1] = b0;
+    led_top1_6.data[0][0][1] = b0;
+    led_top1_7.data[0][0][1] = b0;
+    led_top1_8.data[0][0][1] = b0;
+    led_top1_9.data[0][0][1] = b0;
+    
+    led_top2_0.data[0][0][0] = rightstack.q[0];
+    led_top2_1.data[0][0][0] = rightstack.q[1];
+    led_top2_2.data[0][0][0] = rightstack.q[2];
+    led_top2_3.data[0][0][0] = rightstack.q[3];
+    led_top2_4.data[0][0][0] = rightstack.q[4];
+    led_top2_5.data[0][0][0] = rightstack.q[5];
+    led_top2_6.data[0][0][0] = rightstack.q[6];
+    led_top2_7.data[0][0][0] = rightstack.q[7];
+    led_top2_8.data[0][0][0] = rightstack.q[8];
+    led_top2_9.data[0][0][0] = rightstack.q[9];
+    
+    led_top2_0.data[0][0][1] = b0;
+    led_top2_1.data[0][0][1] = b0;
+    led_top2_2.data[0][0][1] = b0;
+    led_top2_3.data[0][0][1] = b0;
+    led_top2_4.data[0][0][1] = b0;
+    led_top2_5.data[0][0][1] = b0;
+    led_top2_6.data[0][0][1] = b0;
+    led_top2_7.data[0][0][1] = b0;
+    led_top2_8.data[0][0][1] = b0;
+    led_top2_9.data[0][0][1] = b0;
+    
+    led_wire_0_0 = led_top0_0.out;
+    led_wire_0_1 = led_top0_1.out;
+    led_wire_0_2 = led_top0_2.out;
+    led_wire_0_3 = led_top0_3.out;
+    led_wire_0_4 = led_top0_4.out;
+    led_wire_0_5 = led_top0_5.out;
+    led_wire_0_6 = led_top0_6.out;
+    led_wire_0_7 = led_top0_7.out;
+    led_wire_0_8 = led_top0_8.out;
+    led_wire_0_9 = led_top0_9.out;
+    
+    led_wire_1_0 = led_top1_0.out;
+    led_wire_1_1 = led_top1_1.out;
+    led_wire_1_2 = led_top1_2.out;
+    led_wire_1_3 = led_top1_3.out;
+    led_wire_1_4 = led_top1_4.out;
+    led_wire_1_5 = led_top1_5.out;
+    led_wire_1_6 = led_top1_6.out;
+    led_wire_1_7 = led_top1_7.out;
+    led_wire_1_8 = led_top1_8.out;
+    led_wire_1_9 = led_top1_9.out;
+    
+    led_wire_2_0 = led_top2_0.out;
+    led_wire_2_1 = led_top2_1.out;
+    led_wire_2_2 = led_top2_2.out;
+    led_wire_2_3 = led_top2_3.out;
+    led_wire_2_4 = led_top2_4.out;
+    led_wire_2_5 = led_top2_5.out;
+    led_wire_2_6 = led_top2_6.out;
+    led_wire_2_7 = led_top2_7.out;
+    led_wire_2_8 = led_top2_8.out;
+    led_wire_2_9 = led_top2_9.out;
     
     reset_cond.in = ~rst_n; // input raw inverted reset signal
     rst = reset_cond.out;   // conditioned reset
     
-    io_seg = 8hff;          // turn segments off
-    io_sel = 4hf;           // select no digits
-    
     spi_miso = bz;          // not using SPI
     spi_channel = bzzzz;    // not using flags
     avr_rx = bz;            // not using serial port
-    
-    io_seg = ~seg.seg; // connect segments to the driver
-    io_sel = ~seg.sel; // connect digits to the driver
-    seg.values = playerscores.q; // initialise player scores
     
     // initialise inputs/outputs as 0 first, then change input accordingly later
     alu16.a = 16b0;
     alu16.b = 16b0;
     alu16.opcode = 6b0;
     
-    // ----- ALL LED STUFF -----
-    // updates the led strip whenever leftstack, middlestack, or rightstack is changed
-    led_manager.leftstack = leftstack.q;
-    led_manager.middlestack = middlestack.q;
-    led_manager.rightstack = rightstack.q;
-    // left led strip
-    led_output0.d = led_manager.led_output0;
-    led_top0.data = led_output0.q;  // send data into led_top to produce signals
-    led_strip0 = led_top0.out;  // send signals to led strip
-    // middle led strip
-    led_output1.d = led_manager.led_output1;
-    led_top1.data = led_output1.q;  // send data into led_top to produce signals
-    led_strip1 = led_top1.out;  // send signals to led strip
-    // right led strip
-    led_output2.d = led_manager.led_output2;
-    led_top2.data = led_output2.q;  // send data into led_top to produce signals
-    led_strip2 = led_top2.out;  // send signals to led strip
-    
     // Button Initializing
-    buttonStart.in = io_startgame;
-    detectStart.in = buttonStart.out;
-    
-    buttonReset.in = io_reset;
-    detectReset.in = buttonReset.out;
+    buttonMoveLP1.in = p1left_button;
+    buttonMoveRP1.in = p1right_button;
+    buttonRemove1P1.in = p1rm1_button;
+    buttonRemove2P1.in = p1rm2_button;
 
-    buttonMoveLP1.in = io_button[0][3];
-    buttonMoveRP1.in = io_button[0][4];
-    buttonRemove1P1.in = io_button[0][0];
-    buttonRemove2P1.in = io_button[0][2];
-
-    buttonMoveLP2.in = io_button[1][3];
-    buttonMoveRP2.in = io_button[1][4];
-    buttonRemove1P2.in = io_button[1][0];
-    buttonRemove2P2.in = io_button[1][2];
+    buttonMoveLP2.in = p2left_button;
+    buttonMoveRP2.in = p2right_button;
+    buttonRemove1P2.in = p2rm1_button;
+    buttonRemove2P2.in = p2rm2_button;
 
     detectMoveLP1.in = buttonMoveLP1.out;
     detectMoveRP1.in = buttonMoveRP1.out;
@@ -263,56 +312,28 @@ module mojo_top #(ROW=10, COL=1)(
     detectMoveRP2.in = buttonMoveRP2.out;
     detectUpRm1P2.in = buttonRemove1P2.out;
     detectDnRm2P2.in = buttonRemove2P2.out;
-    
-    // Commented out as we're using external IOs now
-    /*
-    buttonleft.in = io_button[3];
-    detectMoveLP1.in = buttonleft.out;
-    buttonright.in = io_button[4];
-    detectMoveRP1.in = buttonright.out;
-    buttonupremove1.in = io_button[0][0];
-    detectUpRm1P1.in = buttonupremove1.out;
-    buttondownremove2.in = io_button[2];
-    detectDnRm2P1.in = buttondownremove2.out;
-    buttonstartgame.in = io_startgame;
-    detectstart.in = buttonstartgame.out;
-    buttonreset.in = io_reset;
-    detectReset.in = buttonreset.out;*/
 
     // Activate randomisers
     randl.enable = 1;
     randm.enable = 1;
     randr.enable = 1;
     
+    io_led[0] = leftstack.q;
+    io_led[1] = middlestack.q;
+    io_led[2] = rightstack.q;
 
     case(states.q){
       states.START:
-        // To test if change of state is displayed on led
-        test_led0.d = b1;
-        test_led1.d = b0;
-        test_led2.d = b0;
-        test_led3.d = b0;
-        test_led4.d = b0;
-        test_led5.d = b0;
-        test_led6.d = b0;
-        test_led7.d = b0;
-        test_led8.d = b0;
         
-        
-        /*led[2] = randl.out; // no blinking to indicate location
-        led[1] = randm.out; // no blinking to indicate location
-        led[0] = randr.out; // no blinking to indicate location*/
-        
-        randl.enable = 1;  // to re-randomise if player resets game
+        randl.enable = 1;  // to re-randomise game resets
         randm.enable = 1;
         randr.enable = 1;
         
-        seg.values = playerscores.q;
         leftstack.d   = randl.out;
         middlestack.d = randm.out;
         rightstack.d  = randr.out;
         
-        if (detectTest.out == 1){
+        if (detectUpRm1P1.out == 1 | detectUpRm1P2.out == 1){
           states.d = states.P1M;
         } else {
           states.d = states.START;
@@ -320,47 +341,18 @@ module mojo_top #(ROW=10, COL=1)(
         
         
       states.P1M:
-        // To test if change of state is displayed on led
-        test_led0.d = b0;
-        test_led1.d = b1;
-        test_led2.d = b0;
-        test_led3.d = b0;
-        test_led4.d = b0;
-        test_led5.d = b0;
-        test_led6.d = b0;
-        test_led7.d = b0;
-        test_led8.d = b0;
-        
-        
-        seg.values = playerscores.q;
         
         randl.enable = 0;
         randm.enable = 0;
         randr.enable = 0;
-        
-        /*
-
-        if (turn_blink.q == playerscores.q){
-          turn_blink.d[1:0] = playerscores.q[1:0];
-          turn_blink.d[3:2] = {4b0,4b0};
-        } else {
-          turn_blink.d = playerscores.q;
-        }
-        led[2] = leftstack.q;   // no blinking to indicate location
-        led[1] = location_blink.q; // BLINKING to indicate location
-        led[0] = rightstack.q;  // no blinking to indicate location        
-        */
-        if (detectReset.out == 1){
-          states.d = states.START;
-        }
         
         alu16.b = 16b1;
         alu16.opcode = CMPLT;
         
         if(detectMoveLP1.out == 1){
           alu16.a = leftstack.q;
-          checkEqualsZero = alu16.out[0];
-          if (checkEqualsZero == 1){
+
+          if (alu16.out[0] == 1){
             states.d = states.P1M;
           } else {
             states.d = states.P1L;
@@ -368,8 +360,8 @@ module mojo_top #(ROW=10, COL=1)(
         }
         else if (detectMoveRP1.out == 1){
           alu16.a = rightstack.q;
-          checkEqualsZero = alu16.out[0];
-          if (checkEqualsZero == 1){
+
+          if (alu16.out[0] == 1){
             states.d = states.P1M;
           } else {
             states.d = states.P1R;
@@ -379,9 +371,8 @@ module mojo_top #(ROW=10, COL=1)(
           alu16.a = middlestack.q;
           alu16.b = 16b1;
           alu16.opcode = CMPLT;
-          checkLessThanOne = alu16.out;
           
-          if (checkLessThanOne == 16b1){  // Check if there is enough LEDs left to shift right by 1
+          if (alu16.out == 16b1){  // Check if there is enough LEDs left to shift right by 1
             states.d = states.P1M;
           }else{
             alu16.opcode = SHR;
@@ -393,9 +384,8 @@ module mojo_top #(ROW=10, COL=1)(
           alu16.a = middlestack.q;
           alu16.b = 16b10;
           alu16.opcode = CMPLT;
-          checkLessThanTwo = alu16.out;
           
-          if (checkLessThanTwo == 16b1){  // Check if there is enough LEDs left to shift right by 2
+          if (alu16.out == 16b1){  // Check if there is enough LEDs left to shift right by 2
             states.d = states.P1M;
           }else{
             alu16.opcode = SHR;
@@ -403,30 +393,13 @@ module mojo_top #(ROW=10, COL=1)(
             states.d = states.P1C;
           }
         }
-        
+                
 
       states.P1L:
-        // To test if change of state is displayed on led
-        test_led0.d = b0;
-        test_led1.d = b0;
-        test_led2.d = b1;
-        test_led3.d = b0;
-        test_led4.d = b0;
-        test_led5.d = b0;
-        test_led6.d = b0;
-        test_led7.d = b0;
-        test_led8.d = b0;
-        
-        
-        seg.values = playerscores.q;
         
         randl.enable = 0;
         randm.enable = 0;
         randr.enable = 0;
-        
-        if (detectReset.out == 1){
-          states.d = states.START;
-        }
         
         alu16.b = 16b1;
         alu16.opcode = CMPLT;
@@ -436,13 +409,13 @@ module mojo_top #(ROW=10, COL=1)(
         }
         else if (detectMoveRP1.out == 1) {
           alu16.a = middlestack.q;
-          checkEqualsZero = alu16.out[0];
-          if (checkEqualsZero == 1){
+
+          if (alu16.out[0] == 1){
             states.d = states.P1R;
             
             alu16.a = rightstack.q;
-            checkOtherStack = alu16.out[0];
-            if (checkOtherStack == 1){
+
+            if (alu16.out[0] == 1){
               states.d = states.P1L;
             }
           } else {
@@ -453,9 +426,8 @@ module mojo_top #(ROW=10, COL=1)(
           alu16.a = leftstack.q;
           alu16.b = 16b1;
           alu16.opcode = CMPLT;
-          checkLessThanOne = alu16.out;
           
-          if (checkLessThanOne == 16b1){  // Check if there is enough LEDs left to shift right by 1
+          if (alu16.out == 16b1){  // Check if there is enough LEDs left to shift right by 1
             states.d = states.P1L;
           }else{
             alu16.opcode = SHR;
@@ -467,9 +439,8 @@ module mojo_top #(ROW=10, COL=1)(
           alu16.a = leftstack.q;
           alu16.b = 16b10;
           alu16.opcode = CMPLT;
-          checkLessThanTwo = alu16.out;
           
-          if (checkLessThanTwo == 16b1){  // Check if there is enough LEDs left to shift right by 1
+          if (alu16.out == 16b1){  // Check if there is enough LEDs left to shift right by 1
             states.d = states.P1L;
           }else{
             alu16.opcode = SHR;
@@ -478,63 +449,24 @@ module mojo_top #(ROW=10, COL=1)(
           }
         }
         
-        
-        /*
-        seg.values = turn_blink.q;
-           
-        if (turn_blink.q == playerscores.q){
-          turn_blink.d[1:0] = playerscores.q[1:0];
-          turn_blink.d[3:2] = {4b0,4b0};
-        }else{
-          turn_blink.d = playerscores.q;
-        }   
-        
-        led[2] = location_blink.q; // BLINKING to indicate location
-        led[1] = middlestack.q; // no blinking to indicate location
-        led[0] = rightstack.q; // no blinking to indicate location    
-        
-        if (location_blink.q == leftstack.q){
-          location_blink.d = 8b0;
-        }else{
-          location_blink.d = leftstack.q;  // CHECK WITH SAMSON WHAT DOES THAT MEAN
-        } 
-        */
-        
       states.P1R:
-        // To test if change of state is displayed on led
-        test_led0.d = b0;
-        test_led1.d = b0;
-        test_led2.d = b0;
-        test_led3.d = b1;
-        test_led4.d = b0;
-        test_led5.d = b0;
-        test_led6.d = b0;
-        test_led7.d = b0;
-        test_led8.d = b0;
-        
-        
-        seg.values = playerscores.q;
         
         randl.enable = 0;
         randm.enable = 0;
         randr.enable = 0;
-        
-        if (detectReset.out == 1){
-          states.d = states.START;
-        }
         
         alu16.b = 16b1;
         alu16.opcode = CMPLT;
         
         if (detectMoveLP1.out == 1){
           alu16.a = middlestack.q;
-          checkEqualsZero = alu16.out[0];
-          if (checkEqualsZero == 1){
+
+          if (alu16.out[0] == 1){
             states.d = states.P1L;
             
             alu16.a = leftstack.q;
-            checkOtherStack = alu16.out[0];
-            if (checkOtherStack == 1){
+
+            if (alu16.out[0] == 1){
               states.d = states.P1R;
             }
           } else {
@@ -548,9 +480,8 @@ module mojo_top #(ROW=10, COL=1)(
           alu16.a = rightstack.q;
           alu16.b = 16b1;
           alu16.opcode = CMPLT;
-          checkLessThanOne = alu16.out;
           
-          if (checkLessThanOne == 16b1){  // Check if there is enough LEDs left to shift right by 1
+          if (alu16.out == 16b1){  // Check if there is enough LEDs left to shift right by 1
             states.d = states.P1R;
           }else{
             alu16.opcode = SHR;
@@ -562,9 +493,8 @@ module mojo_top #(ROW=10, COL=1)(
           alu16.a = rightstack.q;
           alu16.b = 16b10;
           alu16.opcode = CMPLT;
-          checkLessThanTwo = alu16.out;
           
-          if (checkLessThanTwo == 16b1){  // Check if there is enough LEDs left to shift right by 1
+          if (alu16.out == 16b1){  // Check if there is enough LEDs left to shift right by 1
             states.d = states.P1R;
           }else{
             alu16.opcode = SHR;
@@ -575,132 +505,93 @@ module mojo_top #(ROW=10, COL=1)(
         
         
       states.P2M:
-        // To test if change of state is displayed on led
-        test_led0.d = b0;
-        test_led1.d = b0;
-        test_led2.d = b0;
-        test_led3.d = b0;
-        test_led4.d = b1;
-        test_led5.d = b0;
-        test_led6.d = b0;
-        test_led7.d = b0;
-        test_led8.d = b0;
-        
-        
-        
-        seg.values = playerscores.q;
         
         randl.enable = 0;
         randm.enable = 0;
         randr.enable = 0;
         
-        if (detectReset.out == 1){
-          states.d = states.START;
-        }
-        
         alu16.b = 16b1;
         alu16.opcode = CMPLT;
         
-        if (detectMoveLP1.out == 1){
+        if (detectMoveLP2.out == 1){
           alu16.a = leftstack.q;
-          checkEqualsZero = alu16.out[0];
-          if (checkEqualsZero == 1){
+
+          if (alu16.out[0] == 1){
             states.d = states.P2M;
           }else{
             states.d = states.P2L;
           }
         }
-        else if (detectMoveRP1.out == 1) {
+        else if (detectMoveRP2.out == 1) {
           alu16.a = rightstack.q;
-          checkEqualsZero = alu16.out[0];
-          if (checkEqualsZero == 1){
+
+          if (alu16.out[0] == 1){
             states.d = states.P2M;
           }else{
             states.d = states.P2R;
           }
         }
-        else if (detectUpRm1P1.out == 1){
+        else if (detectUpRm1P2.out == 1){
           alu16.a = middlestack.q;
           alu16.b = 16b1;
           alu16.opcode = CMPLT;
-          checkLessThanOne = alu16.out;
           
-          if (checkLessThanOne == 16b1){  // Check if there is enough LEDs left to shift right by 1
+          if (alu16.out == 16b1){  // Check if there is enough LEDs left to shift right by 1
             states.d = states.P2M;
           }else{
             alu16.opcode = SHR;
-            rightstack.d = alu16.out;  // input of alu16 is alr at most 10 digits, so dropping most sig bit is ok
+            middlestack.d = alu16.out;  // input of alu16 is alr at most 10 digits, so dropping most sig bit is ok
             states.d = states.P2C;
           }
         }
-        else if (detectDnRm2P1.out == 1){
+        else if (detectDnRm2P2.out == 1){
           alu16.a = middlestack.q;
           alu16.b = 16b10;
-          alu16.opcode = CMPLT;
-          checkLessThanTwo = alu16.out;
+          alu16.opcode = CMPLT;       
           
-          if (checkLessThanTwo == 16b1){  // Check if there is enough LEDs left to shift right by 1
+          if (alu16.out == 16b1){  // Check if there is enough LEDs left to shift right by 1
             states.d = states.P2M;
           }else{
             alu16.opcode = SHR;
-            rightstack.d = alu16.out;  // input of alu16 is alr at most 10 digits, so dropping most sig bit is ok
+            middlestack.d = alu16.out;  // input of alu16 is alr at most 10 digits, so dropping most sig bit is ok
             states.d = states.P2C;
           }
         }
         
         
       states.P2L:
-        // To test if change of state is displayed on led
-        test_led0.d = b0;
-        test_led1.d = b0;
-        test_led2.d = b0;
-        test_led3.d = b0;
-        test_led4.d = b0;
-        test_led5.d = b1;
-        test_led6.d = b0;
-        test_led7.d = b0;
-        test_led8.d = b0;
-        
-        
-        
-        seg.values = playerscores.q;
         
         randl.enable = 0;
         randm.enable = 0;
         randr.enable = 0;
         
-        if (detectReset.out == 1){
-          states.d = states.START;
-        }
-        
         alu16.b = 16b1;
         alu16.opcode = CMPLT;
         
-        if (detectMoveLP1.out == 1){
+        if (detectMoveLP2.out == 1){
           states.d = states.P2L;
         }
-        else if (detectMoveRP1.out == 1) {
+        else if (detectMoveRP2.out == 1) {
           alu16.a = middlestack.q;
-          checkEqualsZero = alu16.out[0];
-          if (checkEqualsZero == 1){
+
+          if (alu16.out[0] == 1){
             states.d = states.P2R;
             
             alu16.a = rightstack.q;
-            checkOtherStack = alu16.out[0];
-            if (checkOtherStack == 1){
+
+            if (alu16.out[0] == 1){
               states.d = states.P2L;
             }
           } else {
             states.d = states.P2M;
           }
         }
-        else if (detectUpRm1P1.out == 1){
+        else if (detectUpRm1P2.out == 1){
           alu16.a = leftstack.q;
           alu16.b = 16b1;
           alu16.opcode = CMPLT;
-          checkLessThanOne = alu16.out;
           
-          if (checkLessThanOne == 16b1){  // Check if there is enough LEDs left to shift right by 1
+          if (alu16.out == 16b1){  // Check if there is enough LEDs left to shift right by 1
             states.d = states.P2L;
           }else{
             alu16.opcode = SHR;
@@ -708,13 +599,12 @@ module mojo_top #(ROW=10, COL=1)(
             states.d = states.P2C;
           }
         }
-        else if (detectDnRm2P1.out == 1){
+        else if (detectDnRm2P2.out == 1){
           alu16.a = leftstack.q;
           alu16.b = 16b10;
           alu16.opcode = CMPLT;
-          checkLessThanTwo = alu16.out;
           
-          if (checkLessThanTwo == 16b1){  // Check if there is enough LEDs left to shift right by 1
+          if (alu16.out == 16b1){  // Check if there is enough LEDs left to shift right by 1
             states.d = states.P2L;
           }else{
             alu16.opcode = SHR;
@@ -725,57 +615,38 @@ module mojo_top #(ROW=10, COL=1)(
         
         
       states.P2R:
-        // To test if change of state is displayed on led
-        test_led0.d = b0;
-        test_led1.d = b0;
-        test_led2.d = b0;
-        test_led3.d = b0;
-        test_led4.d = b0;
-        test_led5.d = b0;
-        test_led6.d = b1;
-        test_led7.d = b0;
-        test_led8.d = b0;
-        
-        
-        
-        seg.values = playerscores.q;
         
         randl.enable = 0;
         randm.enable = 0;
         randr.enable = 0;
         
-        if (detectReset.out == 1){
-          states.d = states.START;
-        }
-        
         alu16.b = 16b1;
         alu16.opcode = CMPLT;
         
-        if (detectMoveLP1.out == 1){
+        if (detectMoveLP2.out == 1){
           alu16.a = middlestack.q;
-          checkEqualsZero = alu16.out[0];
-          if (checkEqualsZero == 1){
+
+          if (alu16.out[0] == 1){
             states.d = states.P2L;
             
             alu16.a = leftstack.q;
-            checkOtherStack = alu16.out[0];
-            if (checkOtherStack == 1){
+
+            if (alu16.out[0] == 1){
               states.d = states.P2R;
             }
           } else {
             states.d = states.P2M;
           }
         }
-        else if (detectMoveRP1.out == 1) {
+        else if (detectMoveRP2.out == 1) {
           states.d = states.P2R;
         }
-        else if (detectUpRm1P1.out == 1){
+        else if (detectUpRm1P2.out == 1){
           alu16.a = rightstack.q;
           alu16.b = 16b1;
           alu16.opcode = CMPLT;
-          checkLessThanOne = alu16.out;
           
-          if (checkLessThanOne == 16b1){  // Check if there is enough LEDs left to shift right by 1
+          if (alu16.out == 16b1){  // Check if there is enough LEDs left to shift right by 1
             states.d = states.P2R;
           }else{
             alu16.opcode = SHR;
@@ -783,13 +654,12 @@ module mojo_top #(ROW=10, COL=1)(
             states.d = states.P2C;
           }
         }
-        else if (detectDnRm2P1.out == 1){
+        else if (detectDnRm2P2.out == 1){
           alu16.a = rightstack.q;
           alu16.b = 16b10;
           alu16.opcode = CMPLT;
-          checkLessThanTwo = alu16.out;
           
-          if (checkLessThanTwo == 16b1){  // Check if there is enough LEDs left to shift right by 1
+          if (alu16.out == 16b1){  // Check if there is enough LEDs left to shift right by 1
             states.d = states.P2R;
           }else{
             alu16.opcode = SHR;
@@ -800,39 +670,21 @@ module mojo_top #(ROW=10, COL=1)(
         
         
       states.P1C:
-        // To test if change of state is displayed on led
-        test_led0.d = b0;
-        test_led1.d = b0;
-        test_led2.d = b0;
-        test_led3.d = b0;
-        test_led4.d = b0;
-        test_led5.d = b0;
-        test_led6.d = b0;
-        test_led7.d = b1;
-        test_led8.d = b0;
-        
-        
         
         alu16.a = leftstack.q;
-        alu16.b = 8b0;
+        alu16.b = 10b0;
         alu16.opcode = CMPEQ;
         
-        if (alu16.out && middlestack.q == 16b0 && rightstack.q == 16b0){    // If all stacks are empty, restart game
-          if (playerscores.q[2] == 4d9){
-            playerscores.d[2] = 4d0;
-            playerscores.d[3] = playerscores.q[3] + 4d1;
-          }else{
-            playerscores.d[2] = playerscores.q[2] + 4d1;
-          }
+        if (alu16.out[0] == 1 && middlestack.q == 16b0 && rightstack.q == 16b0){    // If all stacks are empty, restart game
           states.d = states.START;
         }else{
           alu16.a = leftstack.q;
-          alu16.b = 8b1;
+          alu16.b = 10b1;
           alu16.opcode = CMPLT;
                     
-          if (middlestack.q >= 8b1){
+          if (middlestack.q >= 10b1){
             states.d = states.P2M;
-          }else if (!alu16.out){
+          }else if (alu16.out[0] != 1){
             states.d = states.P2L;
           }else{
             states.d = states.P2R;
@@ -840,48 +692,30 @@ module mojo_top #(ROW=10, COL=1)(
         }
           
       states.P2C:
-        // To test if change of state is displayed on led
-        test_led0.d = b0;
-        test_led1.d = b0;
-        test_led2.d = b0;
-        test_led3.d = b0;
-        test_led4.d = b0;
-        test_led5.d = b0;
-        test_led6.d = b0;
-        test_led7.d = b0;
-        test_led8.d = b1;
-        
-        
         
         alu16.a = leftstack.q;
-        alu16.b = 8b0;
+        alu16.b = 10b0;
         alu16.opcode = CMPEQ;
         
-        if (alu16.out && middlestack.q == 16b0 && rightstack.q == 16b0){    // If all stacks are empty, restart game
-          if (playerscores.q[0] == 4d9){
-            playerscores.d[0] = 0;
-            playerscores.d[1] = playerscores.q[1] + 4d1;
-          }else{
-            playerscores.d[0] = playerscores.q[0] + 4d1;
-          }
+        if (alu16.out[0] == 1 && middlestack.q == 16b0 && rightstack.q == 16b0){    // If all stacks are empty, restart game
           states.d = states.START;
         }else{
           alu16.a = leftstack.q;
-          alu16.b = 8b1;
+          alu16.b = 10b1;
           alu16.opcode = CMPLT;
         
-          if (middlestack.q >= 16b0){
-            states.d = states.P2M;
-          }else if (!alu16.out){
-            states.d = states.P2L;
+          if (middlestack.q >= 10b1){
+            states.d = states.P1M;
+          }else if (alu16.out[0] != 1){
+            states.d = states.P1L;
           }else{
-            states.d = states.P2R;
+            states.d = states.P1R;
           }
         }
         
       default:
-        states.d = states.P1M;
+        states.d = states.START;
           
-  }
+    }        
   }
 }
