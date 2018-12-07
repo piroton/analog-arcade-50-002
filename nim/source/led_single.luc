@@ -1,23 +1,11 @@
-module led_top #(ROW=1, COL=1, LED_BITS=8*3, BIT_CLOCKS=64) (
-    // TO USE THIS MODULE:
-    // 1. Change ROW and COL to the number of outputs we need
-    // 2. Ensure foo has enough bits to accomodate clocks taken to send data and reset signal
-    // 3. Link led_top.data with a constant at mojo_top.luc
-    // E.g. If ROW=1, COL=2 the const can be "const OUTPUT_ONE = {{2b10, 2b11}}"
-    // 
-    // Purpose: Takes data array as input and outputs a single output as data line 
-    // to led strip.
-    // 
-    // LED_BITS is the number of bits an LED bulb requires
-    // BIT_CLOCKS is the number of clocks per bits 
+module led_single #(LED_BITS=24, BIT_CLOCKS=64)(
     input clk,  // clock
     input rst,  // reset
-    input data[ROW][COL][2], // (row, column, selected color); row=7 and col=1 for testing
+    // Data input: 3 colours
+    input data[2],
     output out
   ) {
-  // assume clock freq 50MHz
-  
-  
+
   // possible led_state of data[ROW]][COL][2]
   const LED_0 = 0;  // signal 00
   const LED_1 = 1;  // signal 01
@@ -29,9 +17,12 @@ module led_top #(ROW=1, COL=1, LED_BITS=8*3, BIT_CLOCKS=64) (
   const COLOR_RED   = c{8h00, 8h80, 8h10};  // data signal 1 --> signal 01
   const COLOR_GREEN = c{8h80, 8h00, 8h10};  // data signal 2 --> signal 10
   const COLOR_BLUE  = c{8h00, 8h00, 8hff};  // data signal 3 --> signal 11
-
-  dff board[ROW*COL][2](.clk(clk), .rst(rst));  // stores the current data so that the entire data may be displayed through the led before the data is updated
-  dff counter[14](.clk(clk), .rst(rst));  // 14 bits of a d flipflop value 'counter' where .clk is connected to clk, .rst is connected to rst
+  
+  // 2 Bit memory: What was the colour we were on?
+  dff board[2](.clk(clk), .rst(rst));
+  // 14 bits of a d flipflop value 'counter' where .clk is connected to clk, .rst is connected to rst
+  // We need this counter to tell us exactly how many clocks to wait per LED.
+  dff counter[14](.clk(clk), .rst(rst));
   // note, counter.q is the output of the d flipflop; counter.d is the input of the d flipflop
   sig foo[11];  // temp variable to store >ROW*COL*LED_BITS*BIT_CLOCKS + 50e6 (total clocks for sending signal and reset once), which yields the column to be rendered
   // makes sure this value >ROW*COL*LED_BITS*BIT_CLOCKS + 50e6 to allow time for signals and their reset signals to be constantly sent to led
@@ -39,15 +30,11 @@ module led_top #(ROW=1, COL=1, LED_BITS=8*3, BIT_CLOCKS=64) (
   sig grb[24];  // temp variable to store the GRB values for LED given its led_state
   
   var r, c; // for-loop counters 
- 
+  
   always {
-    // 
-    out = 1b0;  // update after finishing the code
-    // fills up dff board
-    for (c=0; c<COL; c++) for (r=0;r<ROW;r++) board.d[r+c*COL] = data[r][c];
-    // for display
-    // if not at end of displaying all leds
-    if (counter.q < ROW*COL*LED_BITS*BIT_CLOCKS){
+    out = 1b0;
+    board.d = data;
+    if (counter.q < LED_BITS*BIT_CLOCKS){
       c = counter.q/(BIT_CLOCKS*LED_BITS);  // c represents the 2 bit data representing each led
       led_state = board.q[c];
       case (led_state) {  // set grb as the 24 bits output corresponding to the 2 bit data of the color of one led

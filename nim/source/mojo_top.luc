@@ -20,7 +20,7 @@ module mojo_top #(ROW=1, COL=1)(
     input p2rm1_button,
     input p2rm2_button,
     output io_led[3][8],
-    
+    // LEFT STACK
     output led_wire_0_0,
     output led_wire_0_1,
     output led_wire_0_2,
@@ -31,7 +31,7 @@ module mojo_top #(ROW=1, COL=1)(
     output led_wire_0_7,
     output led_wire_0_8,
     output led_wire_0_9,
-    
+    // MIDDLE STACK
     output led_wire_1_0,
     output led_wire_1_1,
     output led_wire_1_2,
@@ -42,7 +42,7 @@ module mojo_top #(ROW=1, COL=1)(
     output led_wire_1_7,
     output led_wire_1_8,
     output led_wire_1_9,
-    
+    // RIGHT STACK
     output led_wire_2_0,
     output led_wire_2_1,
     output led_wire_2_2,
@@ -53,13 +53,16 @@ module mojo_top #(ROW=1, COL=1)(
     output led_wire_2_7,
     output led_wire_2_8,
     output led_wire_2_9
+    /*
+    output led_col_l[10], // left LED column
+    output led_col_m[10], // middle LED column
+    output led_col_r[10]  // right LED column*/
   ) {
   
-  sig rst;                  // reset signal
+  sig rst; // reset signal
   
   // Initialise ALU
   alu alu16;
-
   const SHR = 6b100001;
   const CMPEQ = 6b110011;
   const CMPLT = 6b110101;
@@ -98,73 +101,85 @@ module mojo_top #(ROW=1, COL=1)(
       lfsr_rand randr;
       
       // initializes all components for the led
-      led_top led_top0_0(#ROW(ROW), #COL(COL));
-      led_top led_top0_1(#ROW(ROW), #COL(COL));
-      led_top led_top0_2(#ROW(ROW), #COL(COL));
-      led_top led_top0_3(#ROW(ROW), #COL(COL));
-      led_top led_top0_4(#ROW(ROW), #COL(COL));
-      led_top led_top0_5(#ROW(ROW), #COL(COL));
-      led_top led_top0_6(#ROW(ROW), #COL(COL));
-      led_top led_top0_7(#ROW(ROW), #COL(COL));
-      led_top led_top0_8(#ROW(ROW), #COL(COL));
-      led_top led_top0_9(#ROW(ROW), #COL(COL));
+      /*
+      led_single led_col_l(#ROW(10), #COL(1);
+      led_single led_col_m(#ROW(10), #COL(1);
+      led_single led_col_r(#ROW(10), #COL(1);
+      led_single led_single0_0(#ROW(ROW), #COL(COL));
+      led_single led_single0_1(#ROW(ROW), #COL(COL));
+      led_single led_single0_2(#ROW(ROW), #COL(COL));
+      led_single led_single0_3(#ROW(ROW), #COL(COL));
+      led_single led_single0_4(#ROW(ROW), #COL(COL));
+      led_single led_single0_5(#ROW(ROW), #COL(COL));
+      led_single led_single0_6(#ROW(ROW), #COL(COL));
+      led_single led_single0_7(#ROW(ROW), #COL(COL));
+      led_single led_single0_8(#ROW(ROW), #COL(COL));
+      led_single led_single0_9(#ROW(ROW), #COL(COL));
       
-      led_top led_top1_0(#ROW(ROW), #COL(COL));
-      led_top led_top1_1(#ROW(ROW), #COL(COL));
-      led_top led_top1_2(#ROW(ROW), #COL(COL));
-      led_top led_top1_3(#ROW(ROW), #COL(COL));
-      led_top led_top1_4(#ROW(ROW), #COL(COL));
-      led_top led_top1_5(#ROW(ROW), #COL(COL));
-      led_top led_top1_6(#ROW(ROW), #COL(COL));
-      led_top led_top1_7(#ROW(ROW), #COL(COL));
-      led_top led_top1_8(#ROW(ROW), #COL(COL));
-      led_top led_top1_9(#ROW(ROW), #COL(COL));
+      led_single led_single1_0(#ROW(ROW), #COL(COL));
+      led_single led_single1_1(#ROW(ROW), #COL(COL));
+      led_single led_single1_2(#ROW(ROW), #COL(COL));
+      led_single led_single1_3(#ROW(ROW), #COL(COL));
+      led_single led_single1_4(#ROW(ROW), #COL(COL));
+      led_single led_single1_5(#ROW(ROW), #COL(COL));
+      led_single led_single1_6(#ROW(ROW), #COL(COL));
+      led_single led_single1_7(#ROW(ROW), #COL(COL));
+      led_single led_single1_8(#ROW(ROW), #COL(COL));
+      led_single led_single1_9(#ROW(ROW), #COL(COL));
       
-      led_top led_top2_0(#ROW(ROW), #COL(COL));
-      led_top led_top2_1(#ROW(ROW), #COL(COL));
-      led_top led_top2_2(#ROW(ROW), #COL(COL));
-      led_top led_top2_3(#ROW(ROW), #COL(COL));
-      led_top led_top2_4(#ROW(ROW), #COL(COL));
-      led_top led_top2_5(#ROW(ROW), #COL(COL));
-      led_top led_top2_6(#ROW(ROW), #COL(COL));
-      led_top led_top2_7(#ROW(ROW), #COL(COL));
-      led_top led_top2_8(#ROW(ROW), #COL(COL));
-      led_top led_top2_9(#ROW(ROW), #COL(COL));
+      led_single led_single2_0(#ROW(ROW), #COL(COL));
+      led_single led_single2_1(#ROW(ROW), #COL(COL));
+      led_single led_single2_2(#ROW(ROW), #COL(COL));
+      led_single led_single2_3(#ROW(ROW), #COL(COL));
+      led_single led_single2_4(#ROW(ROW), #COL(COL));
+      led_single led_single2_5(#ROW(ROW), #COL(COL));
+      led_single led_single2_6(#ROW(ROW), #COL(COL));
+      led_single led_single2_7(#ROW(ROW), #COL(COL));
+      led_single led_single2_8(#ROW(ROW), #COL(COL));
+      led_single led_single2_9(#ROW(ROW), #COL(COL));*/
+      led_single led_single0_0;
+      led_single led_single0_1;
+      led_single led_single0_2;
+      led_single led_single0_3;
+      led_single led_single0_4;
+      led_single led_single0_5;
+      led_single led_single0_6;
+      led_single led_single0_7;
+      led_single led_single0_8;
+      led_single led_single0_9;
+      
+      led_single led_single1_0;
+      led_single led_single1_1;
+      led_single led_single1_2;
+      led_single led_single1_3;
+      led_single led_single1_4;
+      led_single led_single1_5;
+      led_single led_single1_6;
+      led_single led_single1_7;
+      led_single led_single1_8;
+      led_single led_single1_9;
+      
+      led_single led_single2_0;
+      led_single led_single2_1;
+      led_single led_single2_2;
+      led_single led_single2_3;
+      led_single led_single2_4;
+      led_single led_single2_5;
+      led_single led_single2_6;
+      led_single led_single2_7;
+      led_single led_single2_8;
+      led_single led_single2_9;
       
       dff leftstack[10](#INIT(10b1111111111)); // set left stack to 10
       dff middlestack[10](#INIT(10b1111111111)); // set middle stack to 10
       dff rightstack[10](#INIT(10b1111111111)); // set right stack to 10
             
-      dff led_output0[ROW][COL][2](#INIT({{b00},
-                                          {b00},
-                                          {b00},
-                                          {b00},
-                                          {b00},
-                                          {b00},
-                                          {b00},
-                                          {b00},
-                                          {b00},
-                                          {b00}}));
-      dff led_output1[ROW][COL][2](#INIT({{b00},
-                                          {b00},
-                                          {b00},
-                                          {b00},
-                                          {b00},
-                                          {b00},
-                                          {b00},
-                                          {b00},
-                                          {b00},
-                                          {b00}}));
-      dff led_output2[ROW][COL][2](#INIT({{b00},
-                                          {b00},
-                                          {b00},
-                                          {b00},
-                                          {b00},
-                                          {b00},
-                                          {b00},
-                                          {b00},
-                                          {b00},
-                                          {b00}}));
+      dff led_output0[2](#INIT({{b00},{b00},{b00},{b00},{b00},
+                                {b00},{b00},{b00},{b00},{b00}}));
+      dff led_output1[2](#INIT({{b00},{b00},{b00},{b00},{b00},
+                                {b00},{b00},{b00},{b00},{b00}}));
+      dff led_output2[2](#INIT({{b00},{b00},{b00},{b00},{b00},
+                                {b00},{b00},{b00},{b00},{b00}}));
     }
   }
   
@@ -181,105 +196,105 @@ module mojo_top #(ROW=1, COL=1)(
   
   
   always {
-    led_top0_0.data[0][0][0] = leftstack.q[0];
-    led_top0_1.data[0][0][0] = leftstack.q[1];
-    led_top0_2.data[0][0][0] = leftstack.q[2];
-    led_top0_3.data[0][0][0] = leftstack.q[3];
-    led_top0_4.data[0][0][0] = leftstack.q[4];
-    led_top0_5.data[0][0][0] = leftstack.q[5];
-    led_top0_6.data[0][0][0] = leftstack.q[6];
-    led_top0_7.data[0][0][0] = leftstack.q[7];
-    led_top0_8.data[0][0][0] = leftstack.q[8];
-    led_top0_9.data[0][0][0] = leftstack.q[9];
+    led_single0_0.data[0] = leftstack.q[0];
+    led_single0_1.data[0] = leftstack.q[1];
+    led_single0_2.data[0] = leftstack.q[2];
+    led_single0_3.data[0] = leftstack.q[3];
+    led_single0_4.data[0] = leftstack.q[4];
+    led_single0_5.data[0] = leftstack.q[5];
+    led_single0_6.data[0] = leftstack.q[6];
+    led_single0_7.data[0] = leftstack.q[7];
+    led_single0_8.data[0] = leftstack.q[8];
+    led_single0_9.data[0] = leftstack.q[9];
     
-    led_top0_0.data[0][0][1] = b0;
-    led_top0_1.data[0][0][1] = b0;
-    led_top0_2.data[0][0][1] = b0;
-    led_top0_3.data[0][0][1] = b0;
-    led_top0_4.data[0][0][1] = b0;
-    led_top0_5.data[0][0][1] = b0;
-    led_top0_6.data[0][0][1] = b0;
-    led_top0_7.data[0][0][1] = b0;
-    led_top0_8.data[0][0][1] = b0;
-    led_top0_9.data[0][0][1] = b0;
+    led_single0_0.data[1] = b0;
+    led_single0_1.data[1] = b0;
+    led_single0_2.data[1] = b0;
+    led_single0_3.data[1] = b0;
+    led_single0_4.data[1] = b0;
+    led_single0_5.data[1] = b0;
+    led_single0_6.data[1] = b0;
+    led_single0_7.data[1] = b0;
+    led_single0_8.data[1] = b0;
+    led_single0_9.data[1] = b0;
     
-    led_top1_0.data[0][0][0] = middlestack.q[0];
-    led_top1_1.data[0][0][0] = middlestack.q[1];
-    led_top1_2.data[0][0][0] = middlestack.q[2];
-    led_top1_3.data[0][0][0] = middlestack.q[3];
-    led_top1_4.data[0][0][0] = middlestack.q[4];
-    led_top1_5.data[0][0][0] = middlestack.q[5];
-    led_top1_6.data[0][0][0] = middlestack.q[6];
-    led_top1_7.data[0][0][0] = middlestack.q[7];
-    led_top1_8.data[0][0][0] = middlestack.q[8];
-    led_top1_9.data[0][0][0] = middlestack.q[9];
+    led_single1_0.data[0] = middlestack.q[0];
+    led_single1_1.data[0] = middlestack.q[1];
+    led_single1_2.data[0] = middlestack.q[2];
+    led_single1_3.data[0] = middlestack.q[3];
+    led_single1_4.data[0] = middlestack.q[4];
+    led_single1_5.data[0] = middlestack.q[5];
+    led_single1_6.data[0] = middlestack.q[6];
+    led_single1_7.data[0] = middlestack.q[7];
+    led_single1_8.data[0] = middlestack.q[8];
+    led_single1_9.data[0] = middlestack.q[9];
     
-    led_top1_0.data[0][0][1] = b0;
-    led_top1_1.data[0][0][1] = b0;
-    led_top1_2.data[0][0][1] = b0;
-    led_top1_3.data[0][0][1] = b0;
-    led_top1_4.data[0][0][1] = b0;
-    led_top1_5.data[0][0][1] = b0;
-    led_top1_6.data[0][0][1] = b0;
-    led_top1_7.data[0][0][1] = b0;
-    led_top1_8.data[0][0][1] = b0;
-    led_top1_9.data[0][0][1] = b0;
+    led_single1_0.data[1] = b0;
+    led_single1_1.data[1] = b0;
+    led_single1_2.data[1] = b0;
+    led_single1_3.data[1] = b0;
+    led_single1_4.data[1] = b0;
+    led_single1_5.data[1] = b0;
+    led_single1_6.data[1] = b0;
+    led_single1_7.data[1] = b0;
+    led_single1_8.data[1] = b0;
+    led_single1_9.data[1] = b0;
     
-    led_top2_0.data[0][0][0] = rightstack.q[0];
-    led_top2_1.data[0][0][0] = rightstack.q[1];
-    led_top2_2.data[0][0][0] = rightstack.q[2];
-    led_top2_3.data[0][0][0] = rightstack.q[3];
-    led_top2_4.data[0][0][0] = rightstack.q[4];
-    led_top2_5.data[0][0][0] = rightstack.q[5];
-    led_top2_6.data[0][0][0] = rightstack.q[6];
-    led_top2_7.data[0][0][0] = rightstack.q[7];
-    led_top2_8.data[0][0][0] = rightstack.q[8];
-    led_top2_9.data[0][0][0] = rightstack.q[9];
+    led_single2_0.data[0] = rightstack.q[0];
+    led_single2_1.data[0] = rightstack.q[1];
+    led_single2_2.data[0] = rightstack.q[2];
+    led_single2_3.data[0] = rightstack.q[3];
+    led_single2_4.data[0] = rightstack.q[4];
+    led_single2_5.data[0] = rightstack.q[5];
+    led_single2_6.data[0] = rightstack.q[6];
+    led_single2_7.data[0] = rightstack.q[7];
+    led_single2_8.data[0] = rightstack.q[8];
+    led_single2_9.data[0] = rightstack.q[9];
     
-    led_top2_0.data[0][0][1] = b0;
-    led_top2_1.data[0][0][1] = b0;
-    led_top2_2.data[0][0][1] = b0;
-    led_top2_3.data[0][0][1] = b0;
-    led_top2_4.data[0][0][1] = b0;
-    led_top2_5.data[0][0][1] = b0;
-    led_top2_6.data[0][0][1] = b0;
-    led_top2_7.data[0][0][1] = b0;
-    led_top2_8.data[0][0][1] = b0;
-    led_top2_9.data[0][0][1] = b0;
+    led_single2_0.data[1] = b0;
+    led_single2_1.data[1] = b0;
+    led_single2_2.data[1] = b0;
+    led_single2_3.data[1] = b0;
+    led_single2_4.data[1] = b0;
+    led_single2_5.data[1] = b0;
+    led_single2_6.data[1] = b0;
+    led_single2_7.data[1] = b0;
+    led_single2_8.data[1] = b0;
+    led_single2_9.data[1] = b0;
     
-    led_wire_0_0 = led_top0_0.out;
-    led_wire_0_1 = led_top0_1.out;
-    led_wire_0_2 = led_top0_2.out;
-    led_wire_0_3 = led_top0_3.out;
-    led_wire_0_4 = led_top0_4.out;
-    led_wire_0_5 = led_top0_5.out;
-    led_wire_0_6 = led_top0_6.out;
-    led_wire_0_7 = led_top0_7.out;
-    led_wire_0_8 = led_top0_8.out;
-    led_wire_0_9 = led_top0_9.out;
+    led_wire_0_0 = led_single0_0.out;
+    led_wire_0_1 = led_single0_1.out;
+    led_wire_0_2 = led_single0_2.out;
+    led_wire_0_3 = led_single0_3.out;
+    led_wire_0_4 = led_single0_4.out;
+    led_wire_0_5 = led_single0_5.out;
+    led_wire_0_6 = led_single0_6.out;
+    led_wire_0_7 = led_single0_7.out;
+    led_wire_0_8 = led_single0_8.out;
+    led_wire_0_9 = led_single0_9.out;
     
-    led_wire_1_0 = led_top1_0.out;
-    led_wire_1_1 = led_top1_1.out;
-    led_wire_1_2 = led_top1_2.out;
-    led_wire_1_3 = led_top1_3.out;
-    led_wire_1_4 = led_top1_4.out;
-    led_wire_1_5 = led_top1_5.out;
-    led_wire_1_6 = led_top1_6.out;
-    led_wire_1_7 = led_top1_7.out;
-    led_wire_1_8 = led_top1_8.out;
-    led_wire_1_9 = led_top1_9.out;
+    led_wire_1_0 = led_single1_0.out;
+    led_wire_1_1 = led_single1_1.out;
+    led_wire_1_2 = led_single1_2.out;
+    led_wire_1_3 = led_single1_3.out;
+    led_wire_1_4 = led_single1_4.out;
+    led_wire_1_5 = led_single1_5.out;
+    led_wire_1_6 = led_single1_6.out;
+    led_wire_1_7 = led_single1_7.out;
+    led_wire_1_8 = led_single1_8.out;
+    led_wire_1_9 = led_single1_9.out;
     
-    led_wire_2_0 = led_top2_0.out;
-    led_wire_2_1 = led_top2_1.out;
-    led_wire_2_2 = led_top2_2.out;
-    led_wire_2_3 = led_top2_3.out;
-    led_wire_2_4 = led_top2_4.out;
-    led_wire_2_5 = led_top2_5.out;
-    led_wire_2_6 = led_top2_6.out;
-    led_wire_2_7 = led_top2_7.out;
-    led_wire_2_8 = led_top2_8.out;
-    led_wire_2_9 = led_top2_9.out;
-    
+    led_wire_2_0 = led_single2_0.out;
+    led_wire_2_1 = led_single2_1.out;
+    led_wire_2_2 = led_single2_2.out;
+    led_wire_2_3 = led_single2_3.out;
+    led_wire_2_4 = led_single2_4.out;
+    led_wire_2_5 = led_single2_5.out;
+    led_wire_2_6 = led_single2_6.out;
+    led_wire_2_7 = led_single2_7.out;
+    led_wire_2_8 = led_single2_8.out;
+    led_wire_2_9 = led_single2_9.out;
+
     reset_cond.in = ~rst_n; // input raw inverted reset signal
     rst = reset_cond.out;   // conditioned reset
     

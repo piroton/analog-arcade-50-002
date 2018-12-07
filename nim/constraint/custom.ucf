@@ -1,6 +1,6 @@
 # Deleted led and io_dip connections from io_shield.ucf
 
-CONFIG VCCAUX=3.3;
+CONFIG VCCAUX=3.7;
 
 NET "clk" TNM_NET = clk;
 TIMESPEC TS_clk = PERIOD "clk" 50 MHz HIGH 50%;

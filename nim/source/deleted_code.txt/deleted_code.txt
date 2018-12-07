@@ -1,0 +1,168 @@
+from: I/O declarations:
+    /*
+    output led_wire_0_0,
+    output led_wire_0_1,
+    output led_wire_0_2,
+    output led_wire_0_3,
+    output led_wire_0_4,
+    output led_wire_0_5,
+    output led_wire_0_6,
+    output led_wire_0_7,
+    output led_wire_0_8,
+    output led_wire_0_9,
+    
+    output led_wire_1_0,
+    output led_wire_1_1,
+    output led_wire_1_2,
+    output led_wire_1_3,
+    output led_wire_1_4,
+    output led_wire_1_5,
+    output led_wire_1_6,
+    output led_wire_1_7,
+    output led_wire_1_8,
+    output led_wire_1_9,
+    
+    output led_wire_2_0,
+    output led_wire_2_1,
+    output led_wire_2_2,
+    output led_wire_2_3,
+    output led_wire_2_4,
+    output led_wire_2_5,
+    output led_wire_2_6,
+    output led_wire_2_7,
+    output led_wire_2_8,
+    output led_wire_2_9*/
+
+from: .clk(clk){.rst(rst){
+    /*
+      led_top led_top0_0(#ROW(ROW), #COL(COL));
+      led_top led_top0_1(#ROW(ROW), #COL(COL));
+      led_top led_top0_2(#ROW(ROW), #COL(COL));
+      led_top led_top0_3(#ROW(ROW), #COL(COL));
+      led_top led_top0_4(#ROW(ROW), #COL(COL));
+      led_top led_top0_5(#ROW(ROW), #COL(COL));
+      led_top led_top0_6(#ROW(ROW), #COL(COL));
+      led_top led_top0_7(#ROW(ROW), #COL(COL));
+      led_top led_top0_8(#ROW(ROW), #COL(COL));
+      led_top led_top0_9(#ROW(ROW), #COL(COL));
+      
+      led_top led_top1_0(#ROW(ROW), #COL(COL));
+      led_top led_top1_1(#ROW(ROW), #COL(COL));
+      led_top led_top1_2(#ROW(ROW), #COL(COL));
+      led_top led_top1_3(#ROW(ROW), #COL(COL));
+      led_top led_top1_4(#ROW(ROW), #COL(COL));
+      led_top led_top1_5(#ROW(ROW), #COL(COL));
+      led_top led_top1_6(#ROW(ROW), #COL(COL));
+      led_top led_top1_7(#ROW(ROW), #COL(COL));
+      led_top led_top1_8(#ROW(ROW), #COL(COL));
+      led_top led_top1_9(#ROW(ROW), #COL(COL));
+      
+      led_top led_top2_0(#ROW(ROW), #COL(COL));
+      led_top led_top2_1(#ROW(ROW), #COL(COL));
+      led_top led_top2_2(#ROW(ROW), #COL(COL));
+      led_top led_top2_3(#ROW(ROW), #COL(COL));
+      led_top led_top2_4(#ROW(ROW), #COL(COL));
+      led_top led_top2_5(#ROW(ROW), #COL(COL));
+      led_top led_top2_6(#ROW(ROW), #COL(COL));
+      led_top led_top2_7(#ROW(ROW), #COL(COL));
+      led_top led_top2_8(#ROW(ROW), #COL(COL));
+      led_top led_top2_9(#ROW(ROW), #COL(COL));*/}}
+from:  always {}
+    /*  led_top0_0.data[0][0][0] = leftstack.q[0];
+    led_top0_1.data[0][0][0] = leftstack.q[1];
+    led_top0_2.data[0][0][0] = leftstack.q[2];
+    led_top0_3.data[0][0][0] = leftstack.q[3];
+    led_top0_4.data[0][0][0] = leftstack.q[4];
+    led_top0_5.data[0][0][0] = leftstack.q[5];
+    led_top0_6.data[0][0][0] = leftstack.q[6];
+    led_top0_7.data[0][0][0] = leftstack.q[7];
+    led_top0_8.data[0][0][0] = leftstack.q[8];
+    led_top0_9.data[0][0][0] = leftstack.q[9];
+    
+    led_top0_0.data[0][0][1] = b0;
+    led_top0_1.data[0][0][1] = b0;
+    led_top0_2.data[0][0][1] = b0;
+    led_top0_3.data[0][0][1] = b0;
+    led_top0_4.data[0][0][1] = b0;
+    led_top0_5.data[0][0][1] = b0;
+    led_top0_6.data[0][0][1] = b0;
+    led_top0_7.data[0][0][1] = b0;
+    led_top0_8.data[0][0][1] = b0;
+    led_top0_9.data[0][0][1] = b0;
+    
+    led_top1_0.data[0][0][0] = middlestack.q[0];
+    led_top1_1.data[0][0][0] = middlestack.q[1];
+    led_top1_2.data[0][0][0] = middlestack.q[2];
+    led_top1_3.data[0][0][0] = middlestack.q[3];
+    led_top1_4.data[0][0][0] = middlestack.q[4];
+    led_top1_5.data[0][0][0] = middlestack.q[5];
+    led_top1_6.data[0][0][0] = middlestack.q[6];
+    led_top1_7.data[0][0][0] = middlestack.q[7];
+    led_top1_8.data[0][0][0] = middlestack.q[8];
+    led_top1_9.data[0][0][0] = middlestack.q[9];
+    
+    led_top1_0.data[0][0][1] = b0;
+    led_top1_1.data[0][0][1] = b0;
+    led_top1_2.data[0][0][1] = b0;
+    led_top1_3.data[0][0][1] = b0;
+    led_top1_4.data[0][0][1] = b0;
+    led_top1_5.data[0][0][1] = b0;
+    led_top1_6.data[0][0][1] = b0;
+    led_top1_7.data[0][0][1] = b0;
+    led_top1_8.data[0][0][1] = b0;
+    led_top1_9.data[0][0][1] = b0;
+    
+    led_top2_0.data[0][0][0] = rightstack.q[0];
+    led_top2_1.data[0][0][0] = rightstack.q[1];
+    led_top2_2.data[0][0][0] = rightstack.q[2];
+    led_top2_3.data[0][0][0] = rightstack.q[3];
+    led_top2_4.data[0][0][0] = rightstack.q[4];
+    led_top2_5.data[0][0][0] = rightstack.q[5];
+    led_top2_6.data[0][0][0] = rightstack.q[6];
+    led_top2_7.data[0][0][0] = rightstack.q[7];
+    led_top2_8.data[0][0][0] = rightstack.q[8];
+    led_top2_9.data[0][0][0] = rightstack.q[9];
+    
+    led_top2_0.data[0][0][1] = b0;
+    led_top2_1.data[0][0][1] = b0;
+    led_top2_2.data[0][0][1] = b0;
+    led_top2_3.data[0][0][1] = b0;
+    led_top2_4.data[0][0][1] = b0;
+    led_top2_5.data[0][0][1] = b0;
+    led_top2_6.data[0][0][1] = b0;
+    led_top2_7.data[0][0][1] = b0;
+    led_top2_8.data[0][0][1] = b0;
+    led_top2_9.data[0][0][1] = b0;
+    
+    led_wire_0_0 = led_top0_0.out;
+    led_wire_0_1 = led_top0_1.out;
+    led_wire_0_2 = led_top0_2.out;
+    led_wire_0_3 = led_top0_3.out;
+    led_wire_0_4 = led_top0_4.out;
+    led_wire_0_5 = led_top0_5.out;
+    led_wire_0_6 = led_top0_6.out;
+    led_wire_0_7 = led_top0_7.out;
+    led_wire_0_8 = led_top0_8.out;
+    led_wire_0_9 = led_top0_9.out;
+    
+    led_wire_1_0 = led_top1_0.out;
+    led_wire_1_1 = led_top1_1.out;
+    led_wire_1_2 = led_top1_2.out;
+    led_wire_1_3 = led_top1_3.out;
+    led_wire_1_4 = led_top1_4.out;
+    led_wire_1_5 = led_top1_5.out;
+    led_wire_1_6 = led_top1_6.out;
+    led_wire_1_7 = led_top1_7.out;
+    led_wire_1_8 = led_top1_8.out;
+    led_wire_1_9 = led_top1_9.out;
+    
+    led_wire_2_0 = led_top2_0.out;
+    led_wire_2_1 = led_top2_1.out;
+    led_wire_2_2 = led_top2_2.out;
+    led_wire_2_3 = led_top2_3.out;
+    led_wire_2_4 = led_top2_4.out;
+    led_wire_2_5 = led_top2_5.out;
+    led_wire_2_6 = led_top2_6.out;
+    led_wire_2_7 = led_top2_7.out;
+    led_wire_2_8 = led_top2_8.out;
+    led_wire_2_9 = led_top2_9.out;*/
