@@ -2,7 +2,7 @@
 
 #define NUM_LEDS 11
 #define NUM_HEADS 3
-#define LEDLINE_A 11
+#define LEDLINE_A 6
 #define LEDLINE_B 7
 #define LEDLINE_C 8
 #define LEDLINE_HD 9
@@ -23,13 +23,13 @@ void setup() {
   FastLED.addLeds<NEOPIXEL, LEDLINE_B>(leds2, NUM_LEDS);
   FastLED.addLeds<NEOPIXEL, LEDLINE_C>(leds3, NUM_LEDS);
   FastLED.addLeds<NEOPIXEL, LEDLINE_HD>(ledheads, NUM_HEADS);
-  
 }
 
 void loop() {
-  for(int i = 0; i<11; i++){
+  for(int i = 0; i<12; i++){
     leds1[i] = COL_RED;
     leds2[i] = COL_BLU;
     leds3[i] = COL_GRN;
   }
+  FastLED.show();
 }
