@@ -2,9 +2,9 @@
 
 #define NUM_LEDS 11
 #define NUM_HEADS 3
-#define LEDLINE_A 11
-#define LEDLINE_B 7
-#define LEDLINE_C 8
+#define LEDLINE_A 10
+#define LEDLINE_B 11
+#define LEDLINE_C 12
 #define LEDLINE_HD 9
 
 #define COL_RED 0xFF0000
@@ -32,4 +32,5 @@ void loop() {
     leds2[i] = COL_BLU;
     leds3[i] = COL_GRN;
   }
+  FastLED.show();
 }
