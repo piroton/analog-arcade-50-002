@@ -39,9 +39,9 @@ const int VALUE_LEFT = 51;  // 3
 const int VALUE_RIGHT = 52;  // 4
 
 int currentState = 0;
-int leftStack = 5;
-int centerStack = 5;
-int rightStack = 5;
+int leftStack = 0;
+int centerStack = 0;
+int rightStack = 0;
 int playerPointer = 1;  // 1 for left player, 2 for right player
 
 // Pin values for buttons
@@ -77,7 +77,7 @@ long debounceDelay = 50;
 
 // values used for FastLED
 const int NUM_LEDS = 11;
-const int NUM_HEADS = 3;
+const int NUM_HEADS = 6;
 const int LEDLINE_A = 10;  // pin number of first data line
 const int LEDLINE_B = 11;  // pin number for second data line
 const int LEDLINE_C = 12;  // pin number for third data line
@@ -125,9 +125,16 @@ void loop() {
 
   // respond to user input
   if (currentState == 0){
+    playerPointer = 1;
+    
     // when serial monitor receives input
     if (inpVal == VALUE_DOWN){
       currentState = 2;
+
+      // initial stack size
+      leftStack = 5;
+      centerStack = 5;
+      rightStack = 5;
     }
   }
 
@@ -259,17 +266,33 @@ void loop() {
       }
     }
   }
+  
+  else if (currentState == 4){  // stack pointer pointing to right
+    
+    if (inpVal == VALUE_DOWN){
+      currentState = 0;
 
+      
+      // reset left, center right stack zero as when someone wins in previous round, one of the columns will have value 10
+      leftStack = 0;
+      centerStack = 0;
+      rightStack = 0;
+    }
+  }
   // check if game has ended
-  if (leftStack == 0 && centerStack == 0 && rightStack == 0){
+  if (leftStack == 0 && centerStack == 0 && rightStack == 0 && currentState != 0){
     currentState = 4;
     int winningPlayer;
     if (playerPointer == 1){  // cos i changed the player before already (sorry if it looks confusing LOL)
       winningPlayer = 2;
+      rightStack = 10;
     }
     else {
       winningPlayer = 1;
+      leftStack = 10;
     }
+
+    playerPointer = 1;  // after win, player 1 press down button to reset game
   }
 }
 
@@ -417,8 +440,6 @@ int inputValue() {
       }
     }
   }
-  
-  
   return output_val;
 }
 
@@ -439,50 +460,76 @@ void displayOutput(int left, int center, int right, int state, int playerTurn){
   char string[255];
   int printedString = sprintf(string, "leftStack: %i; centerStack: %i; rightStack: %i;\ncurrentState: %i; playerPointer: %i;\n", left, center, right, state, playerTurn);
   Serial.print(string);
+
+  if (state == 4){
+    // left column
+    for (int i = 0; i<NUM_LEDS; i++){
+      if (i < left){
+        leds1[i] = COL_BLU;
+      }
+      else {
+        leds1[i] = COL_BLACK;
+      }
+    }
+    
+    // right column
+    for (int i = 0; i<NUM_LEDS; i++){
+      if (i < right){
+        leds3[i] = COL_GRN;
+      }
+      else {
+        leds3[i] = COL_BLACK;
+      }
+    }
+  }
+  else {
+    // left column
+    for (int i = 0; i<NUM_LEDS; i++){
+      if (i < left){
+        leds1[i] = COL_RED;
+      }
+      else {
+        leds1[i] = COL_BLACK;
+      }
+    }
   
-  // left column
-  for (int i = 0; i<NUM_LEDS; i++){
-    if (i < left){
-      leds1[i] = COL_RED;
+    // center column
+    for (int i = 0; i<NUM_LEDS; i++){
+      if (i < center){
+        leds2[i] = COL_RED;
+      }
+      else {
+        leds2[i] = COL_BLACK;
+      }
     }
-    else {
-      leds1[i] = COL_BLACK;
+  
+    // right column
+    for (int i = 0; i<NUM_LEDS; i++){
+      if (i < right){
+        leds3[i] = COL_RED;
+      }
+      else {
+        leds3[i] = COL_BLACK;
+      }
     }
-  }
-
-  // center column
-  for (int i = 0; i<NUM_LEDS; i++){
-    if (i < center){
-      leds2[i] = COL_RED;
-    }
-    else {
-      leds2[i] = COL_BLACK;
-    }
-  }
-
-  // right column
-  for (int i = 0; i<NUM_LEDS; i++){
-    if (i < right){
-      leds3[i] = COL_RED;
-    }
-    else {
-      leds3[i] = COL_BLACK;
-    }
-  }
-
-  for (int i = 0; i<NUM_HEADS; i++){
-    if (state >= 1 && state <= 3){  // if its not beginning/end state of game
-      if (i == state-1){
-        ledheads[i] = COL_RED;
+  
+    for (int i = 0; i<NUM_HEADS; i++){
+      if (state >= 1 && state <= 3){  // if its not beginning/end state of game
+        if (i == state*2-1){
+          ledheads[i-1] = COL_RED;
+          ledheads[i] = COL_RED;
+        }
+        else {
+          ledheads[i] = COL_BLACK;
+        }
       }
       else {
         ledheads[i] = COL_BLACK;
       }
     }
-    else {
-      ledheads[i] = COL_BLACK;
-    }
   }
+  
+  
   
   FastLED.show();
 }

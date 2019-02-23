@@ -2,7 +2,7 @@
 #include <FastLED.h>
 
 #define NUM_LEDS 11
-#define NUM_HEADS 3
+#define NUM_HEADS 6
 #define LEDLINE_A 10
 #define LEDLINE_B 11
 #define LEDLINE_C 12
@@ -87,10 +87,28 @@ void loop() {
     digitalWrite(LED_BUILTIN, LOW);
   }
 
-  for(int i = 0; i<5; i++){
+  for(int i = 0; i<10; i++){
     leds1[i] = COL_RED;
     leds2[i] = COL_RED;
     leds3[i] = COL_RED;
   }
+
+  int state = 1;
+
+  for (int i = 0; i<NUM_HEADS; i++){
+    if (state >= 1 && state <= 3){  // if its not beginning/end state of game
+      if (i == state*2-1){
+        ledheads[i-1] = COL_RED;
+        ledheads[i] = COL_RED;
+      }
+      else {
+        ledheads[i] = COL_BLK;
+      }
+    }
+    else {
+      ledheads[i] = COL_BLK;
+    }
+  }
+    
   FastLED.show();
 }
